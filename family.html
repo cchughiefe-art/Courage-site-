@@ -2,66 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Family Heritage Heritage</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <title>Family Heritage</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #fdf5e6; --text: #5d4037; --line: #8d775f; --card: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; margin: 0; overflow: hidden; }
-
-        /* Generational Colors */
+        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; margin: 0; overflow: hidden; height: 100vh; }
+        
         .gen-0 { border-color: #d4af37 !important; background: #fffcf2 !important; }
         .gen-1 { border-color: #2e7d32 !important; background: #f1f8e9 !important; }
         .gen-2 { border-color: #1565c0 !important; background: #e3f2fd !important; }
 
-        /* View Containers */
-        #mapView { width: 100vw; height: 100vh; display: none; }
-        #viewer { width: 100vw; height: 100vh; cursor: grab; display: flex; align-items: center; justify-content: center; }
+        #mapView { width: 100vw; height: 100vh; display: none; z-index: 5; }
+        #viewer { width: 100vw; height: 100vh; cursor: grab; display: flex; align-items: center; justify-content: center; position: absolute; top: 0; }
         #treeRoot { transform-origin: center; transition: transform 0.2s; padding: 100px; }
 
-        /* Tree Structure */
-        .tree ul { display: flex; justify-content: center; padding-top: 25px; position: relative; }
+        .tree ul { display: flex; justify-content: center; padding-top: 25px; }
         .tree li { position: relative; padding: 25px 10px 0 10px; list-style: none; }
         .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 25px; }
         .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line); }
         .tree li:only-child::after, .tree li:only-child::before, .tree li:first-child::before, .tree li:last-child::after { display: none; }
         .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 25px; }
 
-        /* Card Design */
-        .card { border: 3px solid var(--line); padding: 12px; border-radius: 14px; background: var(--card); min-width: 110px; cursor: pointer; text-align: center; position: relative; transition: 0.3s; }
-        .card:hover { transform: scale(1.1); z-index: 10; }
-        .card img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; }
-        .badge { position: absolute; top: -8px; right: -8px; background: var(--line); color: white; font-size: 0.55rem; padding: 3px 8px; border-radius: 10px; font-weight: bold; }
+        .card { border: 3px solid var(--line); padding: 12px; border-radius: 14px; background: var(--card); min-width: 110px; cursor: pointer; text-align: center; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .badge { position: absolute; top: -8px; right: -8px; background: var(--line); color: white; font-size: 0.55rem; padding: 3px 8px; border-radius: 10px; }
 
-        /* UI Controls */
-        .ui { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 4000; }
-        .btn { background: #5d4037; color: white; border: none; padding: 12px 24px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .ui { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; }
+        .btn { background: #5d4037; color: white; border: none; padding: 12px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
         
-        #modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 20px; display: none; z-index: 5000; width: 300px; border: 2px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        #modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 15px; display: none; z-index: 2000; border: 2px solid var(--line); width: 280px; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="mapView"></div>
-    
-    <div id="viewer">
-        <div class="tree" id="treeRoot"></div>
-    </div>
+    <div id="viewer"><div class="tree" id="treeRoot"></div></div>
 
     <div class="ui">
         <button class="btn" onclick="toggleView()">🗺️ Map/Tree</button>
-        <button class="btn" onclick="downloadTree()">🖼️ Export Full Tree</button>
+        <button class="btn" onclick="downloadTree()">📸 Export Full Tree</button>
     </div>
 
     <div id="modal">
         <h3 id="m-name" style="margin:0"></h3>
-        <p id="m-job" style="font-style:italic; color:#8d775f; margin: 5px 0;"></p>
+        <p id="m-job" style="font-style:italic; font-size:0.85rem; margin:5px 0;"></p>
         <p id="m-loc" style="font-size:0.8rem; font-weight:bold;"></p>
-        <p id="m-bio" style="font-size:0.85rem; line-height:1.4;"></p>
-        <div id="m-health" style="background:#fff5f5; padding:10px; border-radius:8px; margin-top:10px; font-size:0.75rem;"></div>
-        <button onclick="window.print()" style="width:100%; margin-top:15px; padding:10px; background:#8d775f; color:white; border:none; border-radius:5px; cursor:pointer;">Download Profile</button>
-        <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:5px; padding:10px; border:none; cursor:pointer;">Close</button>
+        <p id="m-bio" style="font-size:0.85rem;"></p>
+        <div id="m-health" style="background:#fff5f5; padding:8px; border-radius:5px; margin-top:10px; font-size:0.75rem;"></div>
+        <button onclick="window.print()" style="width:100%; margin-top:10px; padding:8px; background:#8d775f; color:white; border:none; cursor:pointer;">Download Profile</button>
+        <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:5px; padding:8px; border:none; cursor:pointer;">Close</button>
     </div>
 
     <script type="module">
@@ -71,24 +63,23 @@
 
         let scale = 1, posX = 0, posY = 0, familyData = [], map, markers = [];
 
-        // 1. ZOOM & PAN
+        // ZOOM ENGINE
         const viewer = document.getElementById('viewer'), root = document.getElementById('treeRoot');
-        viewer.onwheel = (e) => { e.preventDefault(); scale += e.deltaY * -0.001; scale = Math.min(Math.max(.1, scale), 3); update(); };
-        function update() { root.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+        viewer.onwheel = (e) => { e.preventDefault(); scale += e.deltaY * -0.001; scale = Math.min(Math.max(.1, scale), 3); root.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; };
 
-        // 2. GOOGLE MAPS & LIVE TRACKING
+        // FREE MAP INIT
         function initMap() {
-            map = new google.maps.Map(document.getElementById("mapView"), { zoom: 2, center: { lat: 0, lng: 0 } });
+            map = L.map('mapView').setView([20, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             if(navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
-                    // This updates the first record as a demo - you'd link this to the user's specific ID
-                    console.log("Syncing Live Location:", pos.coords.latitude);
+                    console.log("Live Lat:", pos.coords.latitude); // Connect this to a specific ID to update live location
                 });
             }
         }
-        window.onload = initMap;
+        initMap();
 
-        // 3. TREE BUILDING
+        // DATA LOADING
         onSnapshot(collection(db, "family"), (snap) => {
             familyData = []; snap.forEach(d => familyData.push({ id: d.id, ...d.data() }));
             root.innerHTML = '';
@@ -110,16 +101,30 @@
             root.innerHTML = build("", 0);
         });
 
-        // 4. UTILITIES
         window.toggleView = () => {
             const v = document.getElementById('viewer'), m = document.getElementById('mapView');
-            v.style.display = v.style.display === 'none' ? 'flex' : 'none';
-            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+            if(v.style.display === 'none') { v.style.display='flex'; m.style.display='none'; }
+            else { 
+                v.style.display='none'; m.style.display='block'; 
+                map.invalidateSize();
+                markers.forEach(m => map.removeLayer(m));
+                familyData.forEach(p => {
+                    if(p.location) {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${p.location}`)
+                        .then(r => r.json()).then(d => {
+                            if(d[0]) {
+                                const marker = L.marker([d[0].lat, d[0].lon]).addTo(map).bindPopup(p.name);
+                                markers.push(marker);
+                            }
+                        });
+                    }
+                });
+            }
         };
 
         window.downloadTree = () => {
-            html2canvas(document.getElementById('treeRoot'), { useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = 'HeritageTree.png';
+            html2canvas(root, { useCORS: true }).then(canvas => {
+                const link = document.createElement('a'); link.download = 'FamilyTree.png';
                 link.href = canvas.toDataURL(); link.click();
             });
         };
@@ -130,7 +135,7 @@
             document.getElementById('m-job').innerText = m.job || "";
             document.getElementById('m-loc').innerText = m.location ? "📍 " + m.location : "";
             document.getElementById('m-bio').innerText = m.bio || "";
-            document.getElementById('m-health').innerHTML = m.health ? `<b>Health Records:</b><br>${m.health}` : "";
+            document.getElementById('m-health').innerHTML = m.health ? `<b>Health:</b> ${m.health}` : "";
             document.getElementById('m-health').className = m.health ? "" : "hidden";
             document.getElementById('modal').style.display = 'block';
         };
