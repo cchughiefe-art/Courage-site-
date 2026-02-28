@@ -1,219 +1,79 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Courage's Extended Family Tree</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --text: #e6edf3;
-      --accent: #26a69a;
-      --border: #30363d;
-      --shadow: 0 6px 20px rgba(0,0,0,0.35);
-    }
-
-    [data-theme="light"] {
-      --bg: #f6f8fa;
-      --surface: #ffffff;
-      --text: #24292f;
-      --accent: #26a69a;
-      --border: #d0d7de;
-      --shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    nav {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      padding: 1rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-
-    nav a {
-      text-decoration: none;
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    nav a:hover {
-      color: var(--accent);
-    }
-
-    .theme-toggle {
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      color: var(--text);
-    }
-
-    h1 {
-      font-family: 'Caveat', cursive;
-      text-align: center;
-      font-size: 3rem;
-      color: var(--accent);
-      margin-top: 2rem;
-    }
-
-    .family-section {
-      padding: 2rem 1rem;
-      text-align: center;
-    }
-
-    .tree {
-      overflow-x: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 3rem;
-      padding-bottom: 2rem;
-    }
-
-    .generation {
-      display: flex;
-      gap: 3rem;
-      justify-content: center;
-      min-width: max-content;
-    }
-
-    .family-unit {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.5rem;
-      border-radius: 18px;
-      background: var(--surface);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-
-    .parents {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .children {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .member {
-      padding: 0.8rem 1.4rem;
-      border-radius: 12px;
-      border: 2px solid var(--accent);
-      min-width: 120px;
-      white-space: nowrap;
-    }
-
-    .highlight {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2.2rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courage's Family Tree</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="family.html">Friends & Family</a>
-    <button class="theme-toggle">Toggle</button>
-  </nav>
+    <header id="site-header">Courage’s Family Tree</header>
 
-  <section class="family-section">
-    <h1>Courage's Extended Family Tree</h1>
+    <div class="container">
+        <section id="add-member-form">
+            <h3>Add Family Member</h3>
+            <input type="text" id="memberName" placeholder="Name" required>
+            <input type="text" id="memberRelation" placeholder="Relation (e.g. Father, Cousin)" required>
+            <button id="submitMember">Add to Tree</button>
+        </section>
 
-    <div class="tree">
+        <hr>
 
-      <!-- Grandparents -->
-      <div class="generation">
-        <div class="family-unit">
-          <div class="parents">
-            <div class="member">Grandfather</div>
-            <div class="member">Grandmother</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Their Children -->
-      <div class="generation">
-
-        <!-- Your Parents -->
-        <div class="family-unit">
-          <div class="parents">
-            <div class="member">Father</div>
-            <div class="member">Mother</div>
-          </div>
-          <div class="children">
-            <div class="member highlight">You</div>
-            <div class="member">Sibling 1</div>
-            <div class="member">Sibling 2</div>
-          </div>
-        </div>
-
-        <!-- Uncle 1 -->
-        <div class="family-unit">
-          <div class="parents">
-            <div class="member">Uncle 1</div>
-            <div class="member">Wife</div>
-          </div>
-          <div class="children">
-            <div class="member">Cousin 1</div>
-            <div class="member">Cousin 2</div>
-          </div>
-        </div>
-
-        <!-- Aunt 1 -->
-        <div class="family-unit">
-          <div class="parents">
-            <div class="member">Aunt 1</div>
-            <div class="member">Husband</div>
-          </div>
-          <div class="children">
-            <div class="member">Cousin 3</div>
-          </div>
-        </div>
-
-      </div>
-
+        <section id="tree-display">
+            <h3>The Tree</h3>
+            <ul id="familyList"></ul>
+        </section>
     </div>
-  </section>
 
-  <script>
-    const toggle = document.querySelector('.theme-toggle');
-    const html = document.documentElement;
-    const savedTheme = localStorage.getItem('theme') || 'dark';
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-    html.setAttribute('data-theme', savedTheme);
+        const firebaseConfig = {
+            apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+            authDomain: "family-tree-aec4a.firebaseapp.com",
+            projectId: "family-tree-aec4a",
+            storageBucket: "family-tree-aec4a.firebasestorage.app",
+            messagingSenderId: "956247325424",
+            appId: "1:956247325424:web:94690decde56983ff42035",
+            measurementId: "G-HYDB1DBJC0"
+        };
 
-    toggle.addEventListener('click', () => {
-      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-    });
-  </script>
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const familyRef = collection(db, "family");
 
+        // Step 1: Add member to Firestore
+        document.getElementById('submitMember').addEventListener('click', async () => {
+            const name = document.getElementById('memberName').value;
+            const relation = document.getElementById('memberRelation').value;
+
+            if (name && relation) {
+                await addDoc(familyRef, {
+                    name: name,
+                    relation: relation,
+                    createdAt: new Date()
+                });
+                document.getElementById('memberName').value = '';
+                document.getElementById('memberRelation').value = '';
+            }
+        });
+
+        // Step 2: Listen for real-time updates
+        const q = query(familyRef, orderBy("createdAt", "asc"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('familyList');
+            list.innerHTML = '';
+            snapshot.forEach((doc) => {
+                const member = doc.data();
+                const li = document.createElement('li');
+                li.textContent = `${member.name} (${member.relation})`;
+                list.appendChild(li);
+            });
+        });
+    </script>
 </body>
 </html>
 
