@@ -1,390 +1,225 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Courage's Personal Blog</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #26a69a;
-      --border: #30363d;
-      --nav-bg: rgba(13, 17, 23, 0.9);
-      --shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
-    [data-theme="light"] {
-      --bg: #f6f8fa;
-      --surface: #ffffff;
-      --text: #24292f;
-      --text-muted: #57606a;
-      --accent: #26a69a;
-      --border: #d0d7de;
-      --nav-bg: rgba(255,255,255,0.95);
-      --shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.7;
-      min-height: 100vh;
-      transition: background 0.4s ease, color 0.4s ease;
-    }
-    h1, h2, h3 {
-      font-family: 'Caveat', cursive;
-      font-weight: 600;
-      color: var(--accent);
-    }
-    h1 { font-size: 3.8rem; letter-spacing: -1px; margin-bottom: 1.2rem; }
-    h2 { font-size: 2.8rem; margin: 4rem 0 1.8rem; }
-    h3 { font-size: 1.9rem; margin-bottom: 0.8rem; }
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: var(--nav-bg);
-      backdrop-filter: blur(12px);
-      padding: 1.2rem 0;
-      z-index: 1000;
-      transition: transform 0.4s ease;
-      border-bottom: 1px solid var(--border);
-    }
-    header.hidden { transform: translateY(-100%); }
-    nav {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 2.5rem;
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
-    nav a {
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 1.1rem;
-      transition: color 0.3s;
-    }
-    nav a:hover, nav a.active { color: var(--accent); }
-    .theme-toggle {
-      background: none;
-      border: none;
-      font-size: 1.4rem;
-      cursor: pointer;
-      color: var(--text-muted);
-      transition: color 0.3s, transform 0.3s;
-    }
-    .theme-toggle:hover { color: var(--accent); transform: scale(1.15); }
-    section {
-      padding: 12rem 1.5rem 6rem;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-    .section-intro {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 1.15rem;
-      max-width: 720px;
-      margin: 0 auto 4rem;
-    }
-    .avatar {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      border: 5px solid var(--accent);
-      box-shadow: var(--shadow);
-      margin: 2.5rem auto;
-      display: block;
-      object-fit: cover;
-    }
-    .entry {
-      background: var(--surface);
-      padding: 2rem;
-      border-radius: 16px;
-      margin-bottom: 2.5rem;
-      border-left: 6px solid var(--accent);
-      box-shadow: var(--shadow);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    .entry.visible { opacity: 1; transform: translateY(0); }
-    .entry:hover { transform: translateY(-8px); box-shadow: 0 16px 50px rgba(0,0,0,0.2); }
-    .entry-header {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      margin-bottom: 1.2rem;
-      flex-wrap: wrap;
-    }
-    .entry-date {
-      background: rgba(38,166,154,0.15);
-      color: var(--accent);
-      padding: 0.6rem 1.2rem;
-      border-radius: 50px;
-      font-size: 0.95rem;
-      font-weight: 600;
-    }
-    .comment-section {
-      background: var(--surface);
-      padding: 2.5rem;
-      border-radius: 16px;
-      margin-top: 5rem;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-    a { color: var(--accent); transition: color 0.2s; }
-    a:hover { color: #1e8476; }
-    .back-to-top {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: var(--accent);
-      color: white;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.4s ease;
-      box-shadow: var(--shadow);
-      z-index: 999;
-    }
-    .back-to-top.visible { opacity: 1; visibility: visible; }
-    @media (max-width: 768px) {
-      section { padding: 10rem 1rem 5rem; }
-      h1 { font-size: 2.8rem; }
-      nav { gap: 1.2rem; flex-wrap: wrap; }
-      .entry-header { flex-direction: column; align-items: flex-start; }
-    }
-.menu-btn {
-  position: fixed;
-  top: 1.2rem;
-  right: 1.5rem;
-  background: none;
-  border: none;
-  font-size: 2.2rem;
-  color: var(--text);
-  cursor: pointer;
-  z-index: 1100;
-  transition: color 0.3s;
-}
-.menu-btn:hover { color: var(--accent); }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Courage's Personal Blog</title>
 
-.mobile-menu {
-  position: fixed;
-  top: 0;
-  right: -100%;
-  width: 80%;
-  max-width: 300px;
-  height: 100%;
-  background: var(--surface);
-  padding: 5rem 2rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  transition: right 0.4s ease;
-  z-index: 1050;
-  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-}
-.mobile-menu.open { right: 0; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-.mobile-menu a, .mobile-menu .theme-toggle {
-  color: var(--text);
-  text-decoration: none;
-  font-size: 1.3rem;
-  font-weight: 500;
-  text-align: right;
+<style>
+:root {
+  --bg:#0d1117;
+  --surface:#161b22;
+  --text:#e6edf3;
+  --text-muted:#8b949e;
+  --accent:#26a69a;
+  --border:#30363d;
+  --nav-bg:rgba(13,17,23,0.9);
+  --shadow:0 4px 20px rgba(0,0,0,0.3);
 }
-.mobile-menu a:hover, .mobile-menu .theme-toggle:hover { color: var(--accent); }
+[data-theme="light"] {
+  --bg:#f6f8fa;
+  --surface:#ffffff;
+  --text:#24292f;
+  --text-muted:#57606a;
+  --border:#d0d7de;
+  --nav-bg:rgba(255,255,255,0.95);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.7;
+  transition:0.4s;
+}
+h1,h2,h3{
+  font-family:'Caveat',cursive;
+  color:var(--accent);
+}
+h1{font-size:3rem;margin-bottom:1rem;}
+h2{font-size:2.4rem;margin:4rem 0 1.5rem;}
 
-.close-btn {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  background: none;
-  border: none;
-  font-size: 2.5rem;
-  color: var(--text-muted);
-  cursor: pointer;
+header{
+  position:fixed;
+  top:0;
+  width:100%;
+  background:var(--nav-bg);
+  backdrop-filter:blur(10px);
+  padding:1rem 0;
+  z-index:1000;
+  border-bottom:1px solid var(--border);
 }
-.close-btn:hover { color: var(--accent); }
 
-@media (min-width: 769px) {
-  .menu-btn { display: none; }
-  .mobile-menu {
-    position: static;
-    width: auto;
-    height: auto;
-    background: transparent;
-    padding: 0;
-    flex-direction: row;
-    gap: 2.5rem;
-    box-shadow: none;
-    right: 0;
-  }
-  .mobile-menu.open, .close-btn { display: none; }
-  .mobile-menu a, .mobile-menu .theme-toggle {
-    font-size: 1.1rem;
-    text-align: center;
-  }
+nav{
+  display:flex;
+  justify-content:center;
+  gap:2rem;
 }
-  </style>
+
+nav a{
+  color:var(--text);
+  text-decoration:none;
+  font-weight:500;
+}
+nav a:hover{color:var(--accent);}
+
+.theme-toggle{
+  background:none;
+  border:none;
+  color:var(--text);
+  font-size:1.3rem;
+  cursor:pointer;
+}
+
+section{
+  padding:10rem 1.5rem 5rem;
+  max-width:900px;
+  margin:0 auto;
+}
+
+.entry{
+  background:var(--surface);
+  padding:1.5rem;
+  border-radius:14px;
+  margin-bottom:2rem;
+  border-left:5px solid var(--accent);
+}
+
+/* Hamburger */
+
+.menu-btn{
+  position:fixed;
+  top:1rem;
+  right:1.5rem;
+  font-size:2rem;
+  background:none;
+  border:none;
+  color:var(--text);
+  cursor:pointer;
+  display:none;
+  z-index:1100;
+}
+
+.mobile-menu{
+  position:fixed;
+  top:0;
+  right:-100%;
+  width:75%;
+  height:100%;
+  background:var(--surface);
+  padding:5rem 2rem;
+  display:flex;
+  flex-direction:column;
+  gap:2rem;
+  transition:0.4s;
+  z-index:1050;
+}
+.mobile-menu.open{right:0;}
+
+.mobile-menu a{
+  color:var(--text);
+  text-decoration:none;
+  font-size:1.2rem;
+}
+
+.close-btn{
+  position:absolute;
+  top:1rem;
+  right:1rem;
+  font-size:2rem;
+  background:none;
+  border:none;
+  color:var(--text);
+  cursor:pointer;
+}
+
+@media(max-width:768px){
+  nav{display:none;}
+  .menu-btn{display:block;}
+}
+</style>
 </head>
+
 <body>
 
-  <header id="nav">
-    <nav>
-      <a href="#home">Home</a>
-      <a href="#about">About</a>
-      <a href="#journal">Journal</a>
-      <a href="#contact">Contact</a>
-      <button class="theme-toggle" aria-label="Toggle theme">🌙</button>
-    </nav>
-  </header>
+<header id="nav">
+<nav>
+  <a href="#home">Home</a>
+  <a href="#about">About</a>
+  <a href="#journal">Journal</a>
+  <a href="#contact">Contact</a>
+  <button class="theme-toggle">🌙</button>
+</nav>
+</header>
 
-  <section id="home">
-    <h1>Welcome to my thoughts, daily life in Lagos, and random reflections — all in one place</h1>
-    <p class="section-intro">Come along for the ride: real days, real thoughts, real me.</p>
-  </section>
+<button class="menu-btn">☰</button>
 
-  <section id="about">
-    <h2>About Me</h2>
-    <img src="https://raw.githubusercontent.com/cchughiefe-art/Courage-site-/main/IMG-20260225-WA0044.jpg" alt="Courage" class="avatar">
-    <p class="section-intro">
-      I was born and brought up in Port Harcourt and attended Calvary Star Montessori School.<br>
-      I love techy stuff — exploring gadgets, the internet, and life in general.
-    </p>
-    <p class="section-intro" style="margin-top:2rem;">
-      Follow me on X: <a href="https://x.com/heyits_void" target="_blank">@heyits_void</a>
-    </p>
-  </section>
+<div class="mobile-menu">
+<button class="close-btn">×</button>
+<a href="#home">Home</a>
+<a href="#about">About</a>
+<a href="#journal">Journal</a>
+<a href="#contact">Contact</a>
+</div>
 
-  <section id="journal">
-    <h2>Journal / Daily Thoughts</h2>
-    <p class="section-intro">A personal log of my day's thoughts and a whole lot more.</p>
+<section id="home">
+<h1>Welcome to my thoughts, daily life in Lagos, and random reflections</h1>
+<p>Real days. Real thoughts. Real me.</p>
+</section>
 
-    <div class="entry">
-      <div class="entry-header">
-        <span class="entry-date">February 28, 2026</span>
-        <h3>Just got this journal up and running</h3>
-      </div>
-      <p>Hello guys I just got this stuff up and running and I have to say it wasn't easy made a lot of mistakes but well it working so hurray</p>
-      <small>— Courage</small>
-    </div>
+<section id="about">
+<h2>About Me</h2>
+<p>I was born and brought up in Port Harcourt. I love tech and exploring the internet.</p>
+</section>
 
-    <!-- New entries go here -->
-  </section>
+<section id="journal">
+<h2>Journal</h2>
 
-  <section id="contact">
-    <h2>Contact Me</h2>
-    <p class="section-intro">
-      Email: <a href="mailto:cchughiefe@gmail.com">cchughiefe@gmail.com</a><br>
-      X: <a href="https://x.com/heyits_void" target="_blank">@heyits_void</a>
-    </p>
+<div class="entry">
+<h3>First Entry</h3>
+<p>Finally got this running. Not easy but worth it.</p>
+</div>
 
-    <div class="comment-section">
-      <h3>Comments / Guestbook</h3>
-      <p>Drop a message, question, or just say hi!</p>
-      <script src="https://utteranc.es/client.js"
-        repo="cchughiefe-art/Courage-site-"
-        issue-term="pathname"
-        label="comment"
-        theme="github-dark"
-        crossorigin="anonymous"
-        async>
-     <header id="nav">
-    <nav>
-      <a href="#home">Home</a>
-      <a href="#about">About</a>
-      <a href="#journal">Journal</a>
-      <a href="#contact">Contact</a>
-      <button class="theme-toggle" aria-label="Toggle theme">🌙</button>
-    </nav>
-  </header>
- </script>
-    </div>
-  </section>
+</section>
 
-  <button class="back-to-top" aria-label="Back to top">↑</button>
+<section id="contact">
+<h2>Contact</h2>
+<p>Email: <a href="mailto:cchughiefe@gmail.com">cchughiefe@gmail.com</a></p>
 
-  <script>
-    // Theme toggle
-    const toggle = document.querySelector('.theme-toggle');
-    const html = document.documentElement;
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    html.setAttribute('data-theme', savedTheme);
-    toggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+<div class="comment-section">
+<script src="https://utteranc.es/client.js"
+repo="cchughiefe-art/Courage-site-"
+issue-term="pathname"
+label="comment"
+theme="github-dark"
+crossorigin="anonymous"
+async>
+</script>
+</div>
+</section>
 
-    toggle.addEventListener('click', () => {
-      const current = html.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      toggle.textContent = next === 'dark' ? '🌙' : '☀️';
-      localStorage.setItem('theme', next);
-    });
+<script>
+// Theme toggle
+const toggle=document.querySelector('.theme-toggle');
+const html=document.documentElement;
+toggle.addEventListener('click',()=>{
+  const current=html.getAttribute('data-theme');
+  const next=current==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+});
 
-    // Nav hide/show
-    let lastScroll = 0;
-    const nav = document.getElementById('nav');
-    window.addEventListener('scroll', () => {
-      const current = window.pageYOffset;
-      if (current > lastScroll && current > 150) {
-        nav.classList.add('hidden');
-      } else {
-        nav.classList.remove('hidden');
-      }
-      lastScroll = current <= 0 ? 0 : current;
-    });
+// Mobile menu
+const menuBtn=document.querySelector('.menu-btn');
+const mobileMenu=document.querySelector('.mobile-menu');
+const closeBtn=document.querySelector('.close-btn');
 
-    // Active nav + fade-in entries
-    window.addEventListener('scroll', () => {
-      const sections = document.querySelectorAll('section');
-      const navLinks = document.querySelectorAll('nav a');
-      let current = '';
-      sections.forEach(sec => {
-        const top = sec.offsetTop - 200;
-        if (pageYOffset >= top) current = sec.getAttribute('id');
-      });
-      navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
-      });
-
-      document.querySelectorAll('.entry').forEach(entry => {
-        const rect = entry.getBoundingClientRect();
-        if (rect.top < window.innerHeight - 100) entry.classList.add('visible');
-      });
-    });
-
-    // Back to top
-    const backToTop = document.querySelector('.back-to-top');
-    window.addEventListener('scroll', () => {
-      if (window.pageYOffset > 600) {
-        backToTop.classList.add('visible');
-      } else {
-        backToTop.classList.remove('visible');
-      }
-    });
-    backToTop.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    window.dispatchEvent(new Event('scroll'));
-  </script>
+menuBtn.addEventListener('click',()=>mobileMenu.classList.add('open'));
+closeBtn.addEventListener('click',()=>mobileMenu.classList.remove('open'));
+</script>
 
 </body>
 </html>
