@@ -1,107 +1,219 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Friends & Family - Courage's Site</title>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Courage's Extended Family Tree</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --bg: #0d1117; --surface: #161b22; --text: #e6edf3;
-      --accent: #26a69a; --border: #30363d; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+      --bg: #0d1117;
+      --surface: #161b22;
+      --text: #e6edf3;
+      --accent: #26a69a;
+      --border: #30363d;
+      --shadow: 0 6px 20px rgba(0,0,0,0.35);
     }
-    [data-theme="light"] {
-      --bg: #f6f8fa; --surface: #ffffff; --text: #24292f;
-      --accent: #26a69a; --border: #d0d7de; --shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    body { margin:0; font-family:'Inter', sans-serif; background: var(--bg); color: var(--text); }
-    h1,h2 { font-family:'Caveat', cursive; color: var(--accent); text-align:center; }
-    nav { display:flex; justify-content:center; gap:1.5rem; padding:1rem; background:var(--surface); border-bottom:1px solid var(--border); }
-    nav a { color: var(--text); text-decoration:none; font-weight:500; }
-    nav a:hover { color: var(--accent); }
-    .theme-toggle { cursor:pointer; background:none; border:none; font-size:1.2rem; color:var(--text); }
 
-    /* Family tree */
-    .tree { display:flex; justify-content:center; flex-direction:column; align-items:center; margin:3rem auto; }
-    .tree ul { padding-top: 20px; position: relative; padding-left:0; }
-    .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; }
-    .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--accent); width: 50%; height: 20px; }
-    .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--accent); }
-    .tree li:only-child::before, .tree li:only-child::after { display:none; }
-    .tree li div { border: 2px solid var(--accent); padding: 10px 20px; border-radius:8px; display:inline-block; box-shadow: var(--shadow); background: var(--surface); }
-    .tree li ul { padding-top: 20px; }
-    .tree li ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left:2px solid var(--accent); width:0; height:20px; }
-    @media(max-width:768px){ .tree li { display:block; float:none; padding:10px 0 0 0; } .tree li::before,.tree li::after{ display:none; } }
+    [data-theme="light"] {
+      --bg: #f6f8fa;
+      --surface: #ffffff;
+      --text: #24292f;
+      --accent: #26a69a;
+      --border: #d0d7de;
+      --shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      color: var(--accent);
+    }
+
+    .theme-toggle {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    h1 {
+      font-family: 'Caveat', cursive;
+      text-align: center;
+      font-size: 3rem;
+      color: var(--accent);
+      margin-top: 2rem;
+    }
+
+    .family-section {
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .tree {
+      overflow-x: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+      padding-bottom: 2rem;
+    }
+
+    .generation {
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      min-width: max-content;
+    }
+
+    .family-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .parents {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .children {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .member {
+      padding: 0.8rem 1.4rem;
+      border-radius: 12px;
+      border: 2px solid var(--accent);
+      min-width: 120px;
+      white-space: nowrap;
+    }
+
+    .highlight {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.2rem;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <nav>
     <a href="index.html">Home</a>
     <a href="family.html">Friends & Family</a>
-    <button class="theme-toggle">🌙</button>
+    <button class="theme-toggle">Toggle</button>
   </nav>
 
-  <h1>Courage's Extended Family Tree</h1>
+  <section class="family-section">
+    <h1>Courage's Extended Family Tree</h1>
 
-  <div class="tree">
-    <ul>
+    <div class="tree">
+
       <!-- Grandparents -->
-      <li>
-        <div>Grandfather</div>
-        <ul>
-          <li>
-            <div>Parent 1</div>
-            <ul>
-              <li><div>You</div></li>
-              <li><div>Sibling 1</div></li>
-              <li><div>Sibling 2</div></li>
-            </ul>
-          </li>
-          <li>
-            <div>Parent 2</div>
-            <ul>
-              <li><div>Cousin 1</div></li>
-              <li><div>Cousin 2</div></li>
-              <li><div>Cousin 3</div></li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <div>Grandmother</div>
-        <ul>
-          <li>
-            <div>Uncle/Aunt 1</div>
-            <ul>
-              <li><div>Cousin 4</div></li>
-              <li><div>Cousin 5</div></li>
-            </ul>
-          </li>
-          <li>
-            <div>Uncle/Aunt 2</div>
-            <ul>
-              <li><div>Cousin 6</div></li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </div>
+      <div class="generation">
+        <div class="family-unit">
+          <div class="parents">
+            <div class="member">Grandfather</div>
+            <div class="member">Grandmother</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Their Children -->
+      <div class="generation">
+
+        <!-- Your Parents -->
+        <div class="family-unit">
+          <div class="parents">
+            <div class="member">Father</div>
+            <div class="member">Mother</div>
+          </div>
+          <div class="children">
+            <div class="member highlight">You</div>
+            <div class="member">Sibling 1</div>
+            <div class="member">Sibling 2</div>
+          </div>
+        </div>
+
+        <!-- Uncle 1 -->
+        <div class="family-unit">
+          <div class="parents">
+            <div class="member">Uncle 1</div>
+            <div class="member">Wife</div>
+          </div>
+          <div class="children">
+            <div class="member">Cousin 1</div>
+            <div class="member">Cousin 2</div>
+          </div>
+        </div>
+
+        <!-- Aunt 1 -->
+        <div class="family-unit">
+          <div class="parents">
+            <div class="member">Aunt 1</div>
+            <div class="member">Husband</div>
+          </div>
+          <div class="children">
+            <div class="member">Cousin 3</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
 
   <script>
     const toggle = document.querySelector('.theme-toggle');
     const html = document.documentElement;
     const savedTheme = localStorage.getItem('theme') || 'dark';
+
     html.setAttribute('data-theme', savedTheme);
-    toggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-    toggle.addEventListener('click', ()=>{
-      const next = html.getAttribute('data-theme')==='dark'?'light':'dark';
+
+    toggle.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       html.setAttribute('data-theme', next);
-      toggle.textContent = next==='dark'?'🌙':'☀️';
       localStorage.setItem('theme', next);
     });
   </script>
 
 </body>
 </html>
+
