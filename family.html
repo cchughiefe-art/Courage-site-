@@ -3,43 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Tree View</title>
+    <title>Family Tree</title>
     <style>
-        body { background: #f5f5dc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        body { background: #fdf5e6; font-family: serif; text-align: center; }
         .nav { text-align: right; padding: 15px; }
-        .nav a { text-decoration: none; color: #8d775f; border: 1px solid #8d775f; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; }
-        .tree-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 25px; padding: 40px; }
-        .member-card { background: white; border: 1px solid #d2b48c; padding: 20px; border-radius: 12px; text-align: center; width: 140px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .member-card img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #8d775f; margin-bottom: 10px; }
-        h4 { margin: 5px 0; color: #5d4037; }
-        p { margin: 0; font-size: 0.85rem; color: #a0522d; font-style: italic; }
+        .tree { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .card { background: #fff; border: 2px solid #8d775f; padding: 15px; border-radius: 10px; width: 140px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
+        .card img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #8d775f; }
     </style>
 </head>
 <body>
-    <div class="nav"><a href="add-family.html">Edit Tree</a></div>
-    <h1 style="text-align:center; color: #5d4037;">Our Family Heritage</h1>
-    <div class="tree-container" id="treeDisplay"></div>
+    <div class="nav"><a href="add-family.html" style="color:#8d775f; text-decoration: none; border: 1px solid #8d775f; padding: 5px 10px; border-radius: 5px;">Edit Tree</a></div>
+    <h1 style="color: #5d4037;">Our Family Tree</h1>
+    <div class="tree" id="display"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" };
-        const db = getFirestore(initializeApp(firebaseConfig));
+        const config = { 
+            apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", 
+            authDomain: "family-tree-aec4a.firebaseapp.com",
+            projectId: "family-tree-aec4a",
+            appId: "1:956247325424:web:94690decde56983ff42035"
+        };
+        const db = getFirestore(initializeApp(config));
 
         onSnapshot(query(collection(db, "family"), orderBy("createdAt", "asc")), (snap) => {
-            const display = document.getElementById('treeDisplay');
-            display.innerHTML = '';
-            snap.forEach((doc) => {
-                const m = doc.data();
-                display.innerHTML += `
-                    <div class="member-card">
-                        <img src="${m.photo || 'https://via.placeholder.com/90'}">
-                        <h4>${m.name}</h4>
-                        <p>${m.relation}</p>
-                    </div>`;
+            const out = document.getElementById('display');
+            out.innerHTML = '';
+            snap.forEach((d) => {
+                const m = d.data();
+                out.innerHTML += `<div class="card"><img src="${m.photo}"><h4>${m.name}</h4><p>${m.relation}</p></div>`;
             });
-        });
+        }, (error) => { console.error("Database Error:", error); });
     </script>
 </body>
 </html>

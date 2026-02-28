@@ -1,67 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Manage Family Tree</title>
+    <title>Admin - Family Tree</title>
     <script>
-        const pass = prompt("Enter Admin Password:");
-        if (pass !== "1234") { alert("Access Denied"); window.location.href = "family.html"; }
+        const pass = prompt("Enter Password:");
+        if (pass !== "1234") window.location.href = "family.html";
     </script>
-    <style>
-        body { font-family: sans-serif; background: #eee; padding: 20px; }
-        .box { background: white; padding: 25px; border-radius: 10px; max-width: 450px; margin: auto; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #8d775f; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
-        .del { background: #e74c3c; width: auto; padding: 5px 10px; font-size: 0.75rem; }
-    </style>
 </head>
-<body>
-    <div class="box">
-        <h3>Add New Relative</h3>
-        <input type="text" id="name" placeholder="Name">
-        <input type="text" id="rel" placeholder="Relation">
-        <input type="file" id="pic" accept="image/*">
-        <button id="save">Save to Database</button>
-        <hr style="margin: 25px 0;">
-        <h3>Manage Members</h3>
+<body style="font-family: sans-serif; padding: 20px; background: #eee;">
+    <div style="max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px;">
+        <h3>Add Relative</h3>
+        <input type="text" id="n" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:10px;">
+        <input type="text" id="r" placeholder="Relation" style="width:100%; padding:10px; margin-bottom:10px;">
+        <input type="file" id="p" accept="image/*" style="margin-bottom:10px;">
+        <button id="btn" style="width:100%; padding:10px; background:#8d775f; color:white; border:none; cursor:pointer;">Save Member</button>
+        <hr>
         <div id="list"></div>
-        <p style="text-align:center; margin-top:20px;"><a href="family.html">← Back to View Page</a></p>
+        <p style="text-align:center;"><a href="family.html">Back to Tree</a></p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" };
-        const db = getFirestore(initializeApp(firebaseConfig));
+        const config = { 
+            apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", 
+            authDomain: "family-tree-aec4a.firebaseapp.com",
+            projectId: "family-tree-aec4a",
+            appId: "1:956247325424:web:94690decde56983ff42035"
+        };
+        const db = getFirestore(initializeApp(config));
 
-        document.getElementById('save').onclick = async () => {
-            const file = document.getElementById('pic').files[0];
-            const name = document.getElementById('name').value;
-            if (!file || !name) return alert("Fill Name and Photo");
+        document.getElementById('btn').onclick = async () => {
+            const file = document.getElementById('p').files[0];
+            const name = document.getElementById('n').value;
+            if (!file || !name) return alert("Please add name and photo");
 
             const reader = new FileReader();
             reader.onloadend = async () => {
-                await addDoc(collection(db, "family"), { name, relation: document.getElementById('rel').value, photo: reader.result, createdAt: new Date() });
-                alert("Saved!");
-                location.reload();
+                try {
+                    await addDoc(collection(db, "family"), {
+                        name: name,
+                        relation: document.getElementById('r').value,
+                        photo: reader.result,
+                        createdAt: new Date()
+                    });
+                    alert("Saved Successfully!");
+                    document.getElementById('n').value = '';
+                    document.getElementById('r').value = '';
+                } catch (e) { alert("Save Failed: " + e.message); }
             };
             reader.readAsDataURL(file);
         };
 
         onSnapshot(query(collection(db, "family"), orderBy("createdAt", "asc")), (snap) => {
-            const list = document.getElementById('list');
-            list.innerHTML = '';
+            const l = document.getElementById('list');
+            l.innerHTML = '';
             snap.forEach((d) => {
                 const div = document.createElement('div');
-                div.className = 'item';
-                div.innerHTML = `<span>${d.data().name}</span><button class="del" onclick="rem('${d.id}')">Delete</button>`;
-                list.appendChild(div);
+                div.style = "display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #ddd;";
+                div.innerHTML = `<span>${d.data().name}</span><button onclick="window.del('${d.id}')" style="background:red; color:white; border:none; cursor:pointer;">X</button>`;
+                l.appendChild(div);
             });
         });
 
-        window.rem = async (id) => { if(confirm("Delete this member?")) await deleteDoc(doc(db, "family", id)); };
+        window.del = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "family", id)); };
     </script>
 </body>
 </html>
