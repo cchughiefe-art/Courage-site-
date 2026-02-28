@@ -3,74 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courage's Family Tree</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Caveat&display=swap" rel="stylesheet">
+    <title>Family Tree View</title>
+    <style>
+        body { background: #f5f5dc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        .nav { text-align: right; padding: 15px; }
+        .nav a { text-decoration: none; color: #8d775f; border: 1px solid #8d775f; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; }
+        .tree-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 25px; padding: 40px; }
+        .member-card { background: white; border: 1px solid #d2b48c; padding: 20px; border-radius: 12px; text-align: center; width: 140px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .member-card img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #8d775f; margin-bottom: 10px; }
+        h4 { margin: 5px 0; color: #5d4037; }
+        p { margin: 0; font-size: 0.85rem; color: #a0522d; font-style: italic; }
+    </style>
 </head>
 <body>
-
-    <header id="site-header">Courage’s Family Tree</header>
-
-    <div class="container">
-        <section id="add-member-form">
-            <h3>Add Family Member</h3>
-            <input type="text" id="memberName" placeholder="Name" required>
-            <input type="text" id="memberRelation" placeholder="Relation (e.g. Father, Cousin)" required>
-            <button id="submitMember">Add to Tree</button>
-        </section>
-
-        <hr>
-
-        <section id="tree-display">
-            <h3>The Tree</h3>
-            <ul id="familyList"></ul>
-        </section>
-    </div>
+    <div class="nav"><a href="add-family.html">Edit Tree</a></div>
+    <h1 style="text-align:center; color: #5d4037;">Our Family Heritage</h1>
+    <div class="tree-container" id="treeDisplay"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
-            authDomain: "family-tree-aec4a.firebaseapp.com",
-            projectId: "family-tree-aec4a",
-            storageBucket: "family-tree-aec4a.firebasestorage.app",
-            messagingSenderId: "956247325424",
-            appId: "1:956247325424:web:94690decde56983ff42035",
-            measurementId: "G-HYDB1DBJC0"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" };
+        const db = getFirestore(initializeApp(firebaseConfig));
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const familyRef = collection(db, "family");
-
-        // Step 1: Add member to Firestore
-        document.getElementById('submitMember').addEventListener('click', async () => {
-            const name = document.getElementById('memberName').value;
-            const relation = document.getElementById('memberRelation').value;
-
-            if (name && relation) {
-                await addDoc(familyRef, {
-                    name: name,
-                    relation: relation,
-                    createdAt: new Date()
-                });
-                document.getElementById('memberName').value = '';
-                document.getElementById('memberRelation').value = '';
-            }
-        });
-
-        // Step 2: Listen for real-time updates
-        const q = query(familyRef, orderBy("createdAt", "asc"));
-        onSnapshot(q, (snapshot) => {
-            const list = document.getElementById('familyList');
-            list.innerHTML = '';
-            snapshot.forEach((doc) => {
-                const member = doc.data();
-                const li = document.createElement('li');
-                li.textContent = `${member.name} (${member.relation})`;
-                list.appendChild(li);
+        onSnapshot(query(collection(db, "family"), orderBy("createdAt", "asc")), (snap) => {
+            const display = document.getElementById('treeDisplay');
+            display.innerHTML = '';
+            snap.forEach((doc) => {
+                const m = doc.data();
+                display.innerHTML += `
+                    <div class="member-card">
+                        <img src="${m.photo || 'https://via.placeholder.com/90'}">
+                        <h4>${m.name}</h4>
+                        <p>${m.relation}</p>
+                    </div>`;
             });
         });
     </script>
