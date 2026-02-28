@@ -1,25 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Courage's Website</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Courage's Personal Blog</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
-    h1 { color: #333; }
+    :root {
+      --bg: #0d1117;
+      --text: #c9d1d9;
+      --accent: #58a6ff;
+      --nav-bg: rgba(13, 17, 23, 0.9);
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: var(--nav-bg);
+      backdrop-filter: blur(10px);
+      padding: 1rem;
+      text-align: center;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+    header.hidden {
+      transform: translateY(-100%);
+    }
+    nav a {
+      color: var(--text);
+      margin: 0 1.2rem;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover, nav a.active {
+      color: var(--accent);
+    }
+    section {
+      min-height: 100vh;
+      padding: 8rem 2rem 4rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 { color: var(--accent); }
+    .avatar {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      margin: 1rem auto;
+      display: block;
+    }
+    .entry {
+      background: #161b22;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--accent);
+    }
+    .comment-section {
+      margin-top: 4rem;
+      padding: 2rem;
+      background: #161b22;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
-  <h1>Welcome to Courage's Site! 🚀</h1>
-  <p>This is live on Vercel from GitHub. Edit anytime!</p>
-  <!-- Add more here later -->
+
+  <header id="nav">
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
+      <a href="#journal">Journal</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <section id="home">
+    <h1>Welcome to my personal blog</h1>
+    <p>Scroll or click to explore my thoughts, daily life, and tech interests.</p>
+  </section>
+
+  <section id="about">
+    <h2>About Me</h2>
+    <img src="https://via.placeholder.com/150/58a6ff/0d1117?text=C" alt="Courage's Photo" class="avatar">
+    <p>I grew up in Port Harcourt and now I'm in Lagos working for a Chinese woman. I just love tech stuff — exploring new tools, gadgets, web3, coding, and anything that makes life more interesting.</p>
+    <p>Follow me on X: <a href="https://x.com/heyits_void" target="_blank">@heyits_void</a></p>
+  </section>
+
+  <section id="journal">
+    <h2>Journal / Daily Thoughts</h2>
+    <p>Add your daily entries here — like a personal log. Just edit this file in GitHub and push!</p>
+
+    <div class="entry">
+      <h3>February 28, 2026</h3>
+      <p>Today was busy at work with the boss lady. Learned a bit more about [some tech thing you did today]. Feeling motivated to dive deeper into web stuff tonight.</p>
+      <small>— Courage</small>
+    </div>
+
+    <div class="entry">
+      <h3>February 27, 2026</h3>
+      <p>Quick note: Tried a new app/tool today — really cool how [describe briefly]. Lagos traffic was crazy as usual, but good vibes overall.</p>
+      <small>— Courage</small>
+    </div>
+
+    <!-- To add more: Duplicate the <div class="entry"> block above, change date/title/text, commit & push! -->
+  </section>
+
+  <section id="contact">
+    <h2>Contact Me</h2>
+    <p>Email: <a href="mailto:cchughiefe@gmail.com">cchughiefe@gmail.com</a></p>
+    <p>X: <a href="https://x.com/heyits_void" target="_blank">@heyits_void</a></p>
+
+    <div class="comment-section">
+      <h3>Comments / Guestbook</h3>
+      <p>Leave a message below! (Powered by Utterances — GitHub comments, no account needed to read, sign in with GitHub to post.)</p>
+      <script src="https://utteranc.es/client.js"
+        repo="cchughiefe-art/Courage-site-"
+        issue-term="pathname"
+        label="comment"
+        theme="github-dark"
+        crossorigin="anonymous"
+        async>
+      </script>
+    </div>
+  </section>
+
+  <script>
+    // Hide/show nav on scroll
+    let lastScroll = 0;
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      if (currentScroll > lastScroll && currentScroll > 100) {
+        nav.classList.add('hidden');
+      } else {
+        nav.classList.remove('hidden');
+      }
+      lastScroll = currentScroll;
+    });
+
+    // Highlight active nav link
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('section');
+      const navLinks = document.querySelectorAll('nav a');
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 150;
+        if (pageYOffset >= sectionTop) current = section.getAttribute('id');
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
+      });
+    });
+  </script>
+
 </body>
 </html>
-<h2>About Me</h2>
-<p>I'm Courage from Lagos, Nigeria. I love tech, art, music.</p>
-
-<img src="https://via.placeholder.com/300" alt="My photo" style="border-radius: 50%;">
-
-<h2>Contact</h2>
-<p>Email: chughiefe@gmail.com</p>
-<a href="https://x.com/heyits_void">Follow me on X</a>
