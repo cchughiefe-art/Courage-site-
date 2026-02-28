@@ -5,55 +5,29 @@
     <title>Family Heritage</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #fdf5e6; --text: #5d4037; --line: #8d775f; --card: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; margin: 0; overflow: hidden; height: 100vh; }
-        
-        .gen-0 { border-color: #d4af37 !important; background: #fffcf2 !important; }
-        .gen-1 { border-color: #2e7d32 !important; background: #f1f8e9 !important; }
-        .gen-2 { border-color: #1565c0 !important; background: #e3f2fd !important; }
-
-        #mapView { width: 100vw; height: 100vh; display: none; z-index: 5; }
-        #viewer { width: 100vw; height: 100vh; cursor: grab; display: flex; align-items: center; justify-content: center; position: absolute; top: 0; }
-        #treeRoot { transform-origin: center; transition: transform 0.2s; padding: 100px; }
-
-        .tree ul { display: flex; justify-content: center; padding-top: 25px; }
-        .tree li { position: relative; padding: 25px 10px 0 10px; list-style: none; }
-        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 25px; }
+        body { background: var(--bg); color: var(--text); font-family: serif; margin: 0; }
+        #mapView { width: 100vw; height: 100vh; display: none; position: fixed; top: 0; z-index: 100; }
+        #viewer { width: 100%; min-height: 100vh; display: flex; justify-content: center; padding: 60px 0; overflow-x: auto; }
+        .tree ul { display: flex; justify-content: center; padding-top: 30px; }
+        .tree li { position: relative; padding: 30px 10px 0 10px; list-style: none; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 30px; }
         .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line); }
         .tree li:only-child::after, .tree li:only-child::before, .tree li:first-child::before, .tree li:last-child::after { display: none; }
-        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 25px; }
-
-        .card { border: 3px solid var(--line); padding: 12px; border-radius: 14px; background: var(--card); min-width: 110px; cursor: pointer; text-align: center; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 30px; }
+        .card { border: 3px solid var(--line); padding: 15px; border-radius: 12px; background: var(--card); min-width: 130px; cursor: pointer; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-        .badge { position: absolute; top: -8px; right: -8px; background: var(--line); color: white; font-size: 0.55rem; padding: 3px 8px; border-radius: 10px; }
-
         .ui { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; }
-        .btn { background: #5d4037; color: white; border: none; padding: 12px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        
-        #modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 15px; display: none; z-index: 2000; border: 2px solid var(--line); width: 280px; }
-        .hidden { display: none !important; }
+        .btn { background: #5d4037; color: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div id="mapView"></div>
-    <div id="viewer"><div class="tree" id="treeRoot"></div></div>
-
+    <div id="viewer"><div id="treeRoot" class="tree"></div></div>
     <div class="ui">
-        <button class="btn" onclick="toggleView()">🗺️ Map/Tree</button>
-        <button class="btn" onclick="downloadTree()">📸 Export Full Tree</button>
-    </div>
-
-    <div id="modal">
-        <h3 id="m-name" style="margin:0"></h3>
-        <p id="m-job" style="font-style:italic; font-size:0.85rem; margin:5px 0;"></p>
-        <p id="m-loc" style="font-size:0.8rem; font-weight:bold;"></p>
-        <p id="m-bio" style="font-size:0.85rem;"></p>
-        <div id="m-health" style="background:#fff5f5; padding:8px; border-radius:5px; margin-top:10px; font-size:0.75rem;"></div>
-        <button onclick="window.print()" style="width:100%; margin-top:10px; padding:8px; background:#8d775f; color:white; border:none; cursor:pointer;">Download Profile</button>
-        <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:5px; padding:8px; border:none; cursor:pointer;">Close</button>
+        <button class="btn" onclick="toggleView()">🗺️ Open Live Map</button>
+        <button class="btn" onclick="location.reload()">🔄 Refresh</button>
     </div>
 
     <script type="module">
@@ -61,83 +35,64 @@
         import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
 
-        let scale = 1, posX = 0, posY = 0, familyData = [], map, markers = [];
+        let familyData = [], map, markers = [];
+        map = L.map('mapView').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // ZOOM ENGINE
-        const viewer = document.getElementById('viewer'), root = document.getElementById('treeRoot');
-        viewer.onwheel = (e) => { e.preventDefault(); scale += e.deltaY * -0.001; scale = Math.min(Math.max(.1, scale), 3); root.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; };
-
-        // FREE MAP INIT
-        function initMap() {
-            map = L.map('mapView').setView([20, 0], 2);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            if(navigator.geolocation) {
-                navigator.geolocation.watchPosition(pos => {
-                    console.log("Live Lat:", pos.coords.latitude); // Connect this to a specific ID to update live location
+        // DAILY SYNC: Updates location whenever the page is opened
+        function syncLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const myName = prompt("Enter your name to update your daily location:");
+                    const user = familyData.find(f => f.name === myName);
+                    if(user) {
+                        await updateDoc(doc(db, "family", user.id), {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            lastSeen: new Date().toISOString()
+                        });
+                        alert("Location Synced!");
+                    }
                 });
             }
         }
-        initMap();
 
-        // DATA LOADING
         onSnapshot(collection(db, "family"), (snap) => {
             familyData = []; snap.forEach(d => familyData.push({ id: d.id, ...d.data() }));
-            root.innerHTML = '';
-            const build = (pId, gen) => {
+            renderTree();
+        });
+
+        function renderTree() {
+            const root = document.getElementById('treeRoot'); root.innerHTML = '';
+            const build = (pId) => {
                 const kids = familyData.filter(m => m.parentId === pId && !familyData.find(x => x.spouseId === m.id));
                 if (!kids.length) return '';
                 let html = '<ul>';
                 kids.forEach(k => {
                     const sp = familyData.find(x => x.spouseId === k.id || k.spouseId === x.id);
-                    const card = (m) => `<div class="card gen-${gen > 2 ? 2 : gen}" onclick="window.openProfile('${m.id}')">
-                        ${m.job ? `<span class="badge">${m.job}</span>` : ''}
-                        ${m.photo ? `<img src="${m.photo}">` : ''}<br>
-                        <span style="font-size:0.8rem; font-weight:bold;">${m.name}</span>
-                    </div>`;
-                    html += `<li><div style="display:flex; gap:12px; justify-content:center;">${card(k)}${sp ? card(sp) : ''}</div>${build(k.id, gen + 1)}</li>`;
+                    const card = (m) => `<div class="card" onclick="alert('${m.name}\\nLast Seen: ${m.lastSeen || 'Unknown'}')">
+                        ${m.photo ? `<img src="${m.photo}"><br>` : ''}<b>${m.name}</b></div>`;
+                    html += `<li><div style="display:flex; gap:10px; justify-content:center;">${card(k)}${sp ? card(sp) : ''}</div>${build(k.id)}</li>`;
                 });
                 return html + '</ul>';
             };
-            root.innerHTML = build("", 0);
-        });
+            root.innerHTML = build("");
+        }
 
         window.toggleView = () => {
-            const v = document.getElementById('viewer'), m = document.getElementById('mapView');
-            if(v.style.display === 'none') { v.style.display='flex'; m.style.display='none'; }
-            else { 
-                v.style.display='none'; m.style.display='block'; 
+            const mDiv = document.getElementById('mapView');
+            mDiv.style.display = mDiv.style.display === 'none' ? 'block' : 'none';
+            if(mDiv.style.display === 'block') {
                 map.invalidateSize();
                 markers.forEach(m => map.removeLayer(m));
                 familyData.forEach(p => {
-                    if(p.location) {
-                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${p.location}`)
-                        .then(r => r.json()).then(d => {
-                            if(d[0]) {
-                                const marker = L.marker([d[0].lat, d[0].lon]).addTo(map).bindPopup(p.name);
-                                markers.push(marker);
-                            }
-                        });
+                    if(p.lat && p.lng) {
+                        const m = L.marker([p.lat, p.lng]).addTo(map).bindPopup(`<b>${p.name}</b><br>Updated: ${p.lastSeen}`);
+                        markers.push(m);
                     }
                 });
+                syncLocation(); // Trigger sync when opening map
             }
-        };
-
-        window.downloadTree = () => {
-            html2canvas(root, { useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = 'FamilyTree.png';
-                link.href = canvas.toDataURL(); link.click();
-            });
-        };
-
-        window.openProfile = (id) => {
-            const m = familyData.find(x => x.id === id);
-            document.getElementById('m-name').innerText = m.name;
-            document.getElementById('m-job').innerText = m.job || "";
-            document.getElementById('m-loc').innerText = m.location ? "📍 " + m.location : "";
-            document.getElementById('m-bio').innerText = m.bio || "";
-            document.getElementById('m-health').innerHTML = m.health ? `<b>Health:</b> ${m.health}` : "";
-            document.getElementById('m-health').className = m.health ? "" : "hidden";
-            document.getElementById('modal').style.display = 'block';
         };
     </script>
 </body>

@@ -4,34 +4,29 @@
     <title>Heritage Admin</title>
     <script>if (prompt("Security Code:") !== "1234") window.location.href = "family.html";</script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; }
-        .box { max-width: 550px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        label { font-size: 0.8rem; font-weight: bold; display: block; margin-top: 12px; color: #5d4037; }
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .box { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        label { font-size: 0.75rem; font-weight: bold; display: block; margin-top: 10px; }
         input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .secure-section { border-left: 4px solid #8d775f; padding-left: 15px; background: #fafafa; margin: 15px 0; }
-        button { width: 100%; padding: 14px; background: #8d775f; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        button { width: 100%; padding: 12px; background: #8d775f; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="box">
         <h3>Add Family Member</h3>
         <label>Connect to Relative:</label><select id="target"></select>
-        <label>Relation:</label><select id="relType"><option value="child">Child</option><option value="spouse">Spouse</option><option value="sibling">Sibling</option></select>
+        <label>Relation:</label>
+        <select id="relType">
+            <option value="child">Child of Target</option>
+            <option value="spouse">Spouse of Target</option>
+            <option value="sibling">Sibling of Target</option>
+        </select>
         <hr>
         <label>Full Name:</label><input type="text" id="name" required>
-        <label>Occupation / Student Status:</label><input type="text" id="job">
-        <label>Marriage Date:</label><input type="date" id="mDate">
-        <label>Location (City, Country):</label><input type="text" id="loc" placeholder="e.g. Lagos, Nigeria">
-        <label>Bio/Legacy:</label><textarea id="bio" rows="2"></textarea>
-        
-        <div class="secure-section">
-            <label>🔐 Health History:</label>
-            <input type="text" id="blood" placeholder="Blood Group">
-            <textarea id="health" rows="2" placeholder="Hereditary records..."></textarea>
-        </div>
-
-        <label>Profile Photo:</label><input type="file" id="pic" accept="image/*">
-        <button id="save">Save to Heritage</button>
+        <label>Occupation / Student:</label><input type="text" id="job">
+        <label>Bio:</label><textarea id="bio" rows="2"></textarea>
+        <label>Photo:</label><input type="file" id="pic" accept="image/*">
+        <button id="save">Save Member</button>
     </div>
 
     <script type="module">
@@ -40,41 +35,35 @@
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
         
         onSnapshot(query(collection(db, "family"), orderBy("name", "asc")), (snap) => {
-            const sel = document.getElementById('target'); 
-            sel.innerHTML = '<option value="">Root (First Person)</option>';
+            const sel = document.getElementById('target'); sel.innerHTML = '<option value="">Root (No Parent)</option>';
             snap.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
         });
 
         document.getElementById('save').onclick = async () => {
             const f = document.getElementById('pic').files[0];
             const name = document.getElementById('name').value;
-            if(!name) return alert("Name is required");
+            if(!name) return alert("Enter a name");
 
             const save = async (img) => {
                 let pId = "", sId = "";
-                const type = document.getElementById('relType').value, targetId = document.getElementById('target').value;
+                const type = document.getElementById('relType').value, tId = document.getElementById('target').value;
                 
-                if(targetId) {
-                    if(type === "child") pId = targetId;
-                    if(type === "spouse") sId = targetId;
+                if(tId) {
+                    if(type === "child") pId = tId;
+                    if(type === "spouse") sId = tId;
                     if(type === "sibling") {
-                        const targetData = (await getDoc(doc(db, "family", targetId))).data();
-                        pId = targetData.parentId || "";
+                        const tData = (await getDoc(doc(db, "family", tId))).data();
+                        pId = tData.parentId || "";
                     }
                 }
 
                 await addDoc(collection(db, "family"), { 
-                    name,
-                    job: document.getElementById('job').value || "",
-                    mDate: document.getElementById('mDate').value || "",
-                    location: document.getElementById('loc').value || "",
+                    name, job: document.getElementById('job').value || "",
                     parentId: pId, spouseId: sId, 
                     bio: document.getElementById('bio').value || "",
-                    blood: document.getElementById('blood').value || "",
-                    health: document.getElementById('health').value || "",
-                    photo: img || "", createdAt: new Date() 
+                    photo: img || "", lastSeen: new Date().toISOString()
                 });
-                alert("Saved successfully!"); location.reload();
+                location.reload();
             };
             if(f){ const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(f); } else save("");
         };
