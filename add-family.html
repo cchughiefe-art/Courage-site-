@@ -2,68 +2,56 @@
 <html>
 <head>
     <title>Admin - Family Tree</title>
-    <script>
-        const pass = prompt("Enter Password:");
-        if (pass !== "1234") window.location.href = "family.html";
-    </script>
+    <script>if (prompt("Password:") !== "1234") window.location.href = "family.html";</script>
+    <style>
+        body { font-family: sans-serif; background: #eee; padding: 20px; }
+        .box { max-width: 400px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #8d775f; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
 </head>
-<body style="font-family: sans-serif; padding: 20px; background: #eee;">
-    <div style="max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px;">
-        <h3>Add Relative</h3>
-        <input type="text" id="n" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:10px;">
-        <input type="text" id="r" placeholder="Relation" style="width:100%; padding:10px; margin-bottom:10px;">
-        <input type="file" id="p" accept="image/*" style="margin-bottom:10px;">
-        <button id="btn" style="width:100%; padding:10px; background:#8d775f; color:white; border:none; cursor:pointer;">Save Member</button>
-        <hr>
-        <div id="list"></div>
-        <p style="text-align:center;"><a href="family.html">Back to Tree</a></p>
+<body>
+    <div class="box">
+        <h3>Add Family Member</h3>
+        <input type="text" id="n" placeholder="Full Name">
+        <select id="r">
+            <option value="Grandma">Grandma</option><option value="Grandpa">Grandpa</option>
+            <option value="Aunt">Aunt</option><option value="Aunt Husband">Aunt's Husband</option>
+            <option value="Uncle">Uncle</option><option value="Uncle Wife">Uncle's Wife</option>
+            <option value="Parent">Parent</option><option value="Parent Spouse">Parent's Spouse</option>
+            <option value="Sibling">Sibling</option><option value="Child">Child (Self)</option>
+        </select>
+        <input type="date" id="d">
+        <input type="file" id="p" accept="image/*">
+        <div><input type="checkbox" id="dec"> Mark as Deceased</div>
+        <button id="save">Save Member</button>
+        <div id="list" style="margin-top:20px;"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        const config = { 
-            apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", 
-            authDomain: "family-tree-aec4a.firebaseapp.com",
-            projectId: "family-tree-aec4a",
-            appId: "1:956247325424:web:94690decde56983ff42035"
-        };
+        const config = { apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" };
         const db = getFirestore(initializeApp(config));
+        const col = collection(db, "family");
 
-        document.getElementById('btn').onclick = async () => {
-            const file = document.getElementById('p').files[0];
+        document.getElementById('save').onclick = async () => {
             const name = document.getElementById('n').value;
-            if (!file || !name) return alert("Please add name and photo");
-
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                try {
-                    await addDoc(collection(db, "family"), {
-                        name: name,
-                        relation: document.getElementById('r').value,
-                        photo: reader.result,
-                        createdAt: new Date()
-                    });
-                    alert("Saved Successfully!");
-                    document.getElementById('n').value = '';
-                    document.getElementById('r').value = '';
-                } catch (e) { alert("Save Failed: " + e.message); }
+            if (!name) return alert("Name required");
+            const file = document.getElementById('p').files[0];
+            const save = async (img) => {
+                await addDoc(col, { name, relation: document.getElementById('r').value, dob: document.getElementById('d').value, photo: img, deceased: document.getElementById('dec').checked, createdAt: new Date() });
+                alert("Saved!"); location.reload();
             };
-            reader.readAsDataURL(file);
+            if (file) { const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(file); }
+            else { save(null); }
         };
 
-        onSnapshot(query(collection(db, "family"), orderBy("createdAt", "asc")), (snap) => {
-            const l = document.getElementById('list');
-            l.innerHTML = '';
-            snap.forEach((d) => {
-                const div = document.createElement('div');
-                div.style = "display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #ddd;";
-                div.innerHTML = `<span>${d.data().name}</span><button onclick="window.del('${d.id}')" style="background:red; color:white; border:none; cursor:pointer;">X</button>`;
-                l.appendChild(div);
-            });
+        onSnapshot(query(col, orderBy("createdAt", "asc")), (snap) => {
+            const l = document.getElementById('list'); l.innerHTML = '';
+            snap.forEach(d => { l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #eee;"><span>${d.data().name}</span><button onclick="window.del('${d.id}')" style="color:red; border:none; background:none; cursor:pointer;">Delete</button></div>`; });
         });
-
         window.del = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "family", id)); };
     </script>
 </body>
