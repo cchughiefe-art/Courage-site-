@@ -2,18 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Tree Heritage</title>
+    <title>Family Heritage Tree</title>
     <style>
-        :root { --bg: #fdf5e6; --text: #5d4037; --card-bg: #ffffff; --line: #8d775f; --p-color: #a0522d; }
-        [data-theme="dark"] { --bg: #121212; --text: #e0e0e0; --card-bg: #1e1e1e; --line: #b5a48d; --p-color: #d2b48c; }
-        
-        body { background: var(--bg); font-family: serif; text-align: center; padding: 20px; color: var(--text); transition: 0.3s; }
-        .controls { position: fixed; top: 15px; right: 20px; display: flex; gap: 10px; z-index: 100; }
-        .btn { background: none; border: 1px solid var(--line); color: var(--line); padding: 5px 12px; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 0.8rem; }
-        
+        :root { --bg: #fdf5e6; --text: #5d4037; --line: #8d775f; --card: #fff; }
+        [data-theme="dark"] { --bg: #121212; --text: #e0e0e0; --line: #b5a48d; --card: #1e1e1e; }
+        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; padding: 20px; transition: 0.3s; text-align: center; }
+        .controls { position: fixed; top: 15px; right: 20px; display: flex; gap: 10px; z-index: 1000; }
+        .btn { border: 1px solid var(--line); color: var(--line); padding: 6px 14px; border-radius: 6px; background: var(--card); cursor: pointer; text-decoration: none; font-size: 0.85rem; font-weight: bold; }
         .tree ul { padding-top: 20px; position: relative; display: flex; justify-content: center; }
-        .tree li { list-style-type: none; position: relative; padding: 20px 5px 0 5px; }
+        .tree li { list-style: none; position: relative; padding: 20px 5px 0 5px; transition: 0.5s; }
         .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 20px; }
         .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line); }
         .tree li:only-child::after, .tree li:only-child::before { display: none; }
@@ -22,59 +19,59 @@
         .tree li:last-child::before { border-right: 2px solid var(--line); border-radius: 0 5px 0 0; }
         .tree li:first-child::after { border-radius: 5px 0 0 0; }
         .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 20px; }
-
-        .couple { display: flex; gap: 8px; justify-content: center; align-items: center; }
-        .card { border: 2px solid var(--line); padding: 10px; border-radius: 8px; background: var(--card-bg); min-width: 100px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
-        .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); display: block; margin: 0 auto 5px; }
-        .card h4 { margin: 2px 0; font-size: 0.85rem; color: var(--text); }
-        .card p { margin: 0; font-size: 0.7rem; color: var(--p-color); font-weight: bold; }
-        .dec { border-style: dashed; opacity: 0.8; }
+        .card { border: 1px solid var(--line); padding: 12px; border-radius: 12px; background: var(--card); min-width: 110px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block; position: relative; }
+        .card img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); margin-bottom: 8px; }
+        .couple { display: flex; gap: 12px; justify-content: center; align-items: center; }
+        .deceased { border-style: dashed; opacity: 0.7; }
+        .deceased-tag { color: #d9534f; font-size: 0.5rem; font-weight: bold; position: absolute; bottom: 5px; width: 100%; left: 0; }
+        @media print { .controls, h1 { display: none; } body { background: white; } }
     </style>
 </head>
 <body data-theme="light">
     <div class="controls">
-        <button class="btn" onclick="toggleTheme()">Day/Night</button>
+        <button class="btn" onclick="window.print()">Print PDF</button>
+        <button class="btn" onclick="document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'">Day/Night</button>
         <a href="add-family.html" class="btn">Admin</a>
     </div>
-    <h1>Family Heritage</h1>
-    <div class="tree"><ul id="treeDisplay"></ul></div>
+    <h1 style="margin-top: 40px;">Family Heritage Tree</h1>
+    <div class="tree" id="treeRoot"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
 
-        const config = { apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" };
-        const db = getFirestore(initializeApp(config));
-
-        window.toggleTheme = () => {
-            const body = document.body;
-            const newTheme = body.getAttribute("data-theme") === "light" ? "dark" : "light";
-            body.setAttribute("data-theme", newTheme);
-            localStorage.setItem("theme", newTheme);
-        };
-        if(localStorage.getItem("theme")) document.body.setAttribute("data-theme", localStorage.getItem("theme"));
-
-        onSnapshot(query(collection(db, "family"), orderBy("createdAt", "asc")), (snap) => {
-            const members = [];
-            snap.forEach(d => members.push({ id: d.id, ...d.data() }));
-            const display = document.getElementById('treeDisplay');
+        onSnapshot(collection(db, "family"), (snap) => {
+            const data = []; snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+            const root = document.getElementById('treeRoot'); root.innerHTML = '';
             
-            const getBox = (rel) => {
-                const m = members.find(x => x.relation === rel);
-                if (!m) return `<div class="card" style="opacity:0.3;"><img src="https://via.placeholder.com/60"><h4>Empty</h4><p>${rel}</p></div>`;
-                return `<div class="card ${m.deceased ? 'dec' : ''}">
-                    <img src="${m.photo || 'https://via.placeholder.com/60'}">
-                    <h4>${m.name}</h4><p>${m.relation}</p>
-                    <div style="font-size:0.6rem; color:#777;">${m.dob || ''}</div>
-                </div>`;
+            const getLabel = (level, isSp) => {
+                if (level === 0) return isSp ? "Grandmother" : "Grandfather";
+                if (level === 1) return isSp ? "Uncle/Aunt Spouse" : "Parent / Aunt / Uncle";
+                if (level === 2) return "Child / Cousin";
+                return "Relative";
             };
 
-            display.innerHTML = `<li><div class="couple">${getBox('Grandma')} ${getBox('Grandpa')}</div><ul>
-                <li><div class="couple">${getBox('Aunt')} ${getBox('Aunt Husband')}</div></li>
-                <li><div class="couple">${getBox('Uncle')} ${getBox('Uncle Wife')}</div></li>
-                <li><div class="couple">${getBox('Parent')} ${getBox('Parent Spouse')}</div>
-                    <ul><li>${getBox('Sibling')}</li><li>${getBox('Child')}</li></ul>
-                </li></ul></li>`;
+            const renderCard = (m, level, isSp) => `
+                <div class="card ${m.deceased ? 'deceased' : ''}">
+                    <img src="${m.photo || 'https://via.placeholder.com/65'}" alt="profile">
+                    <div style="font-weight:bold; font-size:0.85rem;">${m.name}</div>
+                    <div style="font-size:0.65rem; color:#8d775f; margin-top:3px;">${getLabel(level, isSp)}</div>
+                    ${m.dob ? `<div style="font-size:0.55rem; color:#999;">${m.dob}</div>` : ''}
+                    ${m.deceased ? `<div class="deceased-tag">DECEASED</div>` : ''}
+                </div>`;
+
+            const build = (pId, level) => {
+                const kids = data.filter(m => m.parentId === pId && !data.find(x => x.spouseId === m.id));
+                if (!kids.length) return '';
+                let html = '<ul>';
+                kids.forEach(k => {
+                    const sp = data.find(x => x.spouseId === k.id || k.spouseId === x.id);
+                    html += `<li><div class="couple">${renderCard(k, level, false)}${sp ? renderCard(sp, level, true) : ''}</div>${build(k.id, level + 1)}</li>`;
+                });
+                return html + '</ul>';
+            };
+            root.innerHTML = build("", 0);
         });
     </script>
 </body>
