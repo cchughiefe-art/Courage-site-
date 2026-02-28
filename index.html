@@ -170,6 +170,78 @@
       nav { gap: 1.2rem; flex-wrap: wrap; }
       .entry-header { flex-direction: column; align-items: flex-start; }
     }
+.menu-btn {
+  position: fixed;
+  top: 1.2rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  color: var(--text);
+  cursor: pointer;
+  z-index: 1100;
+  transition: color 0.3s;
+}
+.menu-btn:hover { color: var(--accent); }
+
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 80%;
+  max-width: 300px;
+  height: 100%;
+  background: var(--surface);
+  padding: 5rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  transition: right 0.4s ease;
+  z-index: 1050;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+}
+.mobile-menu.open { right: 0; }
+
+.mobile-menu a, .mobile-menu .theme-toggle {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.3rem;
+  font-weight: 500;
+  text-align: right;
+}
+.mobile-menu a:hover, .mobile-menu .theme-toggle:hover { color: var(--accent); }
+
+.close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.close-btn:hover { color: var(--accent); }
+
+@media (min-width: 769px) {
+  .menu-btn { display: none; }
+  .mobile-menu {
+    position: static;
+    width: auto;
+    height: auto;
+    background: transparent;
+    padding: 0;
+    flex-direction: row;
+    gap: 2.5rem;
+    box-shadow: none;
+    right: 0;
+  }
+  .mobile-menu.open, .close-btn { display: none; }
+  .mobile-menu a, .mobile-menu .theme-toggle {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+}
   </style>
 </head>
 <body>
@@ -234,7 +306,16 @@
         theme="github-dark"
         crossorigin="anonymous"
         async>
-      </script>
+     <header id="nav">
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
+      <a href="#journal">Journal</a>
+      <a href="#contact">Contact</a>
+      <button class="theme-toggle" aria-label="Toggle theme">🌙</button>
+    </nav>
+  </header>
+ </script>
     </div>
   </section>
 
