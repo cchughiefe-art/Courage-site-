@@ -7,56 +7,50 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root { --bg: #fdf5e6; --text: #5d4037; --line: #8d775f; --card: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: serif; margin: 0; }
+        body.dark { --bg: #121212; --text: #e0e0e0; --line: #8d775f; --card: #1e1e1e; }
+        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; margin: 0; transition: background 0.4s; }
+        
         #mapView { width: 100vw; height: 100vh; display: none; position: fixed; top: 0; z-index: 100; }
-        #viewer { width: 100%; min-height: 100vh; display: flex; justify-content: center; padding: 60px 0; overflow-x: auto; }
+        #viewer { width: 100%; min-height: 100vh; display: flex; justify-content: center; padding: 100px 0; overflow-x: auto; }
+        
         .tree ul { display: flex; justify-content: center; padding-top: 30px; }
         .tree li { position: relative; padding: 30px 10px 0 10px; list-style: none; }
         .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 30px; }
         .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line); }
         .tree li:only-child::after, .tree li:only-child::before, .tree li:first-child::before, .tree li:last-child::after { display: none; }
         .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 30px; }
-        .card { border: 3px solid var(--line); padding: 15px; border-radius: 12px; background: var(--card); min-width: 130px; cursor: pointer; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+
+        .card { border: 3px solid var(--line); padding: 15px; border-radius: 12px; background: var(--card); min-width: 140px; cursor: pointer; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; }
+
         .ui { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; }
-        .btn { background: #5d4037; color: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .btn { background: var(--line); color: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="mapView"></div>
     <div id="viewer"><div id="treeRoot" class="tree"></div></div>
+    
     <div class="ui">
-        <button class="btn" onclick="toggleView()">🗺️ Open Live Map</button>
-        <button class="btn" onclick="location.reload()">🔄 Refresh</button>
+        <button class="btn" onclick="toggleTheme()">🌓 Dark/Light</button>
+        <button class="btn" onclick="toggleView()">🗺️ Open Map</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
-
         let familyData = [], map, markers = [];
-        map = L.map('mapView').setView([0, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // DAILY SYNC: Updates location whenever the page is opened
-        function syncLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const myName = prompt("Enter your name to update your daily location:");
-                    const user = familyData.find(f => f.name === myName);
-                    if(user) {
-                        await updateDoc(doc(db, "family", user.id), {
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            lastSeen: new Date().toISOString()
-                        });
-                        alert("Location Synced!");
-                    }
-                });
-            }
-        }
+        // Dark Mode Logic
+        window.toggleTheme = () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        };
+        if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
 
+        // Automatic GPS Sync
         onSnapshot(collection(db, "family"), (snap) => {
             familyData = []; snap.forEach(d => familyData.push({ id: d.id, ...d.data() }));
             renderTree();
@@ -70,7 +64,7 @@
                 let html = '<ul>';
                 kids.forEach(k => {
                     const sp = familyData.find(x => x.spouseId === k.id || k.spouseId === x.id);
-                    const card = (m) => `<div class="card" onclick="alert('${m.name}\\nLast Seen: ${m.lastSeen || 'Unknown'}')">
+                    const card = (m) => `<div class="card" onclick="alert('${m.name}')">
                         ${m.photo ? `<img src="${m.photo}"><br>` : ''}<b>${m.name}</b></div>`;
                     html += `<li><div style="display:flex; gap:10px; justify-content:center;">${card(k)}${sp ? card(sp) : ''}</div>${build(k.id)}</li>`;
                 });
@@ -83,15 +77,15 @@
             const mDiv = document.getElementById('mapView');
             mDiv.style.display = mDiv.style.display === 'none' ? 'block' : 'none';
             if(mDiv.style.display === 'block') {
+                if(!map) { 
+                    map = L.map('mapView').setView([0, 0], 2);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                }
                 map.invalidateSize();
                 markers.forEach(m => map.removeLayer(m));
                 familyData.forEach(p => {
-                    if(p.lat && p.lng) {
-                        const m = L.marker([p.lat, p.lng]).addTo(map).bindPopup(`<b>${p.name}</b><br>Updated: ${p.lastSeen}`);
-                        markers.push(m);
-                    }
+                    if(p.lat && p.lng) markers.push(L.marker([p.lat, p.lng]).addTo(map).bindPopup(p.name));
                 });
-                syncLocation(); // Trigger sync when opening map
             }
         };
     </script>
