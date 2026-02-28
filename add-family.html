@@ -1,74 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin - Smart Family Tree</title>
-    <script>if (prompt("Password:") !== "1234") window.location.href = "family.html";</script>
+    <title>Heritage Admin</title>
+    <script>if (prompt("Security Code:") !== "1234") window.location.href = "family.html";</script>
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
-        .box { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h3 { color: #5d4037; border-bottom: 2px solid #8d775f; padding-bottom: 10px; margin-top: 0; }
-        label { font-size: 0.85rem; font-weight: bold; display: block; margin-top: 15px; color: #555; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #8d775f; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold; }
-        button:hover { background: #715f4c; }
-        .item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.8rem; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; }
+        .box { max-width: 550px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        label { font-size: 0.8rem; font-weight: bold; display: block; margin-top: 12px; color: #5d4037; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .secure-section { border-left: 4px solid #8d775f; padding-left: 15px; background: #fafafa; margin: 15px 0; }
+        button { width: 100%; padding: 14px; background: #8d775f; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        button:hover { background: #5d4037; }
     </style>
 </head>
 <body>
     <div class="box">
-        <h3>Smart Family Link</h3>
-        <label>1. Select a Relative:</label>
-        <select id="target"><option value="">Root (Start of Tree)</option></select>
-        <label>2. Who are you adding to them?</label>
-        <select id="relType">
-            <option value="child">Their Child (Aunt, Parent, or Cousin)</option>
-            <option value="spouse">Their Husband/Wife</option>
-            <option value="sibling">Their Sibling (Brother/Sister)</option>
-        </select>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <label>3. New Person Details:</label>
-        <input type="text" id="name" placeholder="Full Name">
-        <input type="date" id="dob">
-        <input type="file" id="pic" accept="image/*">
-        <div style="margin-top:10px;"><input type="checkbox" id="dec"> Mark as Deceased</div>
-        <button id="save">Save and Link Member</button>
-        <h4 style="margin-top:30px; color:#5d4037;">Tree Management</h4>
-        <div id="list"></div>
+        <h3>Add Family Member</h3>
+        <label>Connect to Relative:</label><select id="target"></select>
+        <label>Relation:</label><select id="relType"><option value="child">Child</option><option value="spouse">Spouse</option><option value="sibling">Sibling</option></select>
+        <hr>
+        <label>Full Name:</label><input type="text" id="name" required>
+        <label>Gender:</label><select id="gender"><option>Male</option><option>Female</option></select>
+        <label>Occupation / Student Status:</label><input type="text" id="job">
+        <label>Marriage Date (Anniversary):</label><input type="date" id="mDate">
+        <label>Home Location (City, Country):</label><input type="text" id="loc">
+        <label>Bio/Legacy:</label><textarea id="bio" rows="2"></textarea>
+        
+        <div class="secure-section">
+            <label>🔐 Health History:</label>
+            <input type="text" id="blood" placeholder="Blood Group">
+            <textarea id="health" rows="2" placeholder="Hereditary records..."></textarea>
+        </div>
+
+        <label>Profile Photo:</label><input type="file" id="pic" accept="image/*">
+        <label>Legacy Documents (Scans/PDF):</label><input type="file" id="docs" multiple>
+        
+        <button id="save">Save to Heritage</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
-        const col = collection(db, "family");
-
-        onSnapshot(query(col, orderBy("name", "asc")), (snap) => {
-            const sel = document.getElementById('target'), list = document.getElementById('list');
-            sel.innerHTML = '<option value="">None (Top of Tree)</option>'; list.innerHTML = '';
-            snap.forEach(d => {
-                sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
-                list.innerHTML += `<div class="item"><span>${d.data().name}</span><button onclick="window.del('${d.id}')" style="color:red; border:none; background:none; cursor:pointer;">Delete</button></div>`;
-            });
+        
+        onSnapshot(query(collection(db, "family"), orderBy("name", "asc")), (snap) => {
+            const sel = document.getElementById('target'); sel.innerHTML = '<option value="">Start of Tree</option>';
+            snap.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
         });
 
         document.getElementById('save').onclick = async () => {
-            const name = document.getElementById('name').value, targetId = document.getElementById('target').value, type = document.getElementById('relType').value;
-            if(!name) return alert("Please enter a name");
+            const f = document.getElementById('pic').files[0];
             const save = async (img) => {
                 let pId = "", sId = "";
+                const type = document.getElementById('relType').value, targetId = document.getElementById('target').value;
                 if(type === "child") pId = targetId;
                 if(type === "spouse") sId = targetId;
-                if(type === "sibling" && targetId) {
-                    const docSnap = await getDoc(doc(db, "family", targetId));
-                    pId = docSnap.data().parentId || "";
-                }
-                await addDoc(col, { name, parentId: pId, spouseId: sId, dob: document.getElementById('dob').value, photo: img, deceased: document.getElementById('dec').checked, createdAt: new Date() });
-                alert("Linked Successfully!"); location.reload();
+                if(type === "sibling" && targetId) pId = (await getDoc(doc(db, "family", targetId))).data().parentId || "";
+
+                await addDoc(collection(db, "family"), { 
+                    name: document.getElementById('name').value,
+                    gender: document.getElementById('gender').value,
+                    job: document.getElementById('job').value || "",
+                    mDate: document.getElementById('mDate').value || "",
+                    location: document.getElementById('loc').value || "",
+                    parentId: pId, spouseId: sId, 
+                    bio: document.getElementById('bio').value || "",
+                    blood: document.getElementById('blood').value || "",
+                    health: document.getElementById('health').value || "",
+                    photo: img || "", createdAt: new Date() 
+                });
+                alert("Member Saved!"); location.reload();
             };
-            const f = document.getElementById('pic').files[0];
-            if(f){ const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(f); } else save(null);
+            if(f){ const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(f); } else save("");
         };
-        window.del = async (id) => { if(confirm("Permanently delete?")) await deleteDoc(doc(db, "family", id)); };
     </script>
 </body>
 </html>

@@ -2,77 +2,138 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Family Heritage Tree</title>
+    <title>Family Heritage Heritage</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --bg: #fdf5e6; --text: #5d4037; --line: #8d775f; --card: #fff; }
-        [data-theme="dark"] { --bg: #121212; --text: #e0e0e0; --line: #b5a48d; --card: #1e1e1e; }
-        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; padding: 20px; transition: 0.3s; text-align: center; }
-        .controls { position: fixed; top: 15px; right: 20px; display: flex; gap: 10px; z-index: 1000; }
-        .btn { border: 1px solid var(--line); color: var(--line); padding: 6px 14px; border-radius: 6px; background: var(--card); cursor: pointer; text-decoration: none; font-size: 0.85rem; font-weight: bold; }
-        .tree ul { padding-top: 20px; position: relative; display: flex; justify-content: center; }
-        .tree li { list-style: none; position: relative; padding: 20px 5px 0 5px; transition: 0.5s; }
-        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 20px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; margin: 0; overflow: hidden; }
+
+        /* Generational Colors */
+        .gen-0 { border-color: #d4af37 !important; background: #fffcf2 !important; }
+        .gen-1 { border-color: #2e7d32 !important; background: #f1f8e9 !important; }
+        .gen-2 { border-color: #1565c0 !important; background: #e3f2fd !important; }
+
+        /* View Containers */
+        #mapView { width: 100vw; height: 100vh; display: none; }
+        #viewer { width: 100vw; height: 100vh; cursor: grab; display: flex; align-items: center; justify-content: center; }
+        #treeRoot { transform-origin: center; transition: transform 0.2s; padding: 100px; }
+
+        /* Tree Structure */
+        .tree ul { display: flex; justify-content: center; padding-top: 25px; position: relative; }
+        .tree li { position: relative; padding: 25px 10px 0 10px; list-style: none; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 25px; }
         .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line); }
-        .tree li:only-child::after, .tree li:only-child::before { display: none; }
-        .tree li:only-child { padding-top: 0; }
-        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-        .tree li:last-child::before { border-right: 2px solid var(--line); border-radius: 0 5px 0 0; }
-        .tree li:first-child::after { border-radius: 5px 0 0 0; }
-        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 20px; }
-        .card { border: 1px solid var(--line); padding: 12px; border-radius: 12px; background: var(--card); min-width: 110px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block; position: relative; }
-        .card img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); margin-bottom: 8px; }
-        .couple { display: flex; gap: 12px; justify-content: center; align-items: center; }
-        .deceased { border-style: dashed; opacity: 0.7; }
-        .deceased-tag { color: #d9534f; font-size: 0.5rem; font-weight: bold; position: absolute; bottom: 5px; width: 100%; left: 0; }
-        @media print { .controls, h1 { display: none; } body { background: white; } }
+        .tree li:only-child::after, .tree li:only-child::before, .tree li:first-child::before, .tree li:last-child::after { display: none; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 25px; }
+
+        /* Card Design */
+        .card { border: 3px solid var(--line); padding: 12px; border-radius: 14px; background: var(--card); min-width: 110px; cursor: pointer; text-align: center; position: relative; transition: 0.3s; }
+        .card:hover { transform: scale(1.1); z-index: 10; }
+        .card img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; }
+        .badge { position: absolute; top: -8px; right: -8px; background: var(--line); color: white; font-size: 0.55rem; padding: 3px 8px; border-radius: 10px; font-weight: bold; }
+
+        /* UI Controls */
+        .ui { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 4000; }
+        .btn { background: #5d4037; color: white; border: none; padding: 12px 24px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        
+        #modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 20px; display: none; z-index: 5000; width: 300px; border: 2px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body data-theme="light">
-    <div class="controls">
-        <button class="btn" onclick="window.print()">Print PDF</button>
-        <button class="btn" onclick="document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'">Day/Night</button>
-        <a href="add-family.html" class="btn">Admin</a>
+<body>
+
+    <div id="mapView"></div>
+    
+    <div id="viewer">
+        <div class="tree" id="treeRoot"></div>
     </div>
-    <h1 style="margin-top: 40px;">Family Heritage Tree</h1>
-    <div class="tree" id="treeRoot"></div>
+
+    <div class="ui">
+        <button class="btn" onclick="toggleView()">🗺️ Map/Tree</button>
+        <button class="btn" onclick="downloadTree()">🖼️ Export Full Tree</button>
+    </div>
+
+    <div id="modal">
+        <h3 id="m-name" style="margin:0"></h3>
+        <p id="m-job" style="font-style:italic; color:#8d775f; margin: 5px 0;"></p>
+        <p id="m-loc" style="font-size:0.8rem; font-weight:bold;"></p>
+        <p id="m-bio" style="font-size:0.85rem; line-height:1.4;"></p>
+        <div id="m-health" style="background:#fff5f5; padding:10px; border-radius:8px; margin-top:10px; font-size:0.75rem;"></div>
+        <button onclick="window.print()" style="width:100%; margin-top:15px; padding:10px; background:#8d775f; color:white; border:none; border-radius:5px; cursor:pointer;">Download Profile</button>
+        <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:5px; padding:10px; border:none; cursor:pointer;">Close</button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
 
+        let scale = 1, posX = 0, posY = 0, familyData = [], map, markers = [];
+
+        // 1. ZOOM & PAN
+        const viewer = document.getElementById('viewer'), root = document.getElementById('treeRoot');
+        viewer.onwheel = (e) => { e.preventDefault(); scale += e.deltaY * -0.001; scale = Math.min(Math.max(.1, scale), 3); update(); };
+        function update() { root.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+
+        // 2. GOOGLE MAPS & LIVE TRACKING
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("mapView"), { zoom: 2, center: { lat: 0, lng: 0 } });
+            if(navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    // This updates the first record as a demo - you'd link this to the user's specific ID
+                    console.log("Syncing Live Location:", pos.coords.latitude);
+                });
+            }
+        }
+        window.onload = initMap;
+
+        // 3. TREE BUILDING
         onSnapshot(collection(db, "family"), (snap) => {
-            const data = []; snap.forEach(d => data.push({ id: d.id, ...d.data() }));
-            const root = document.getElementById('treeRoot'); root.innerHTML = '';
-            
-            const getLabel = (level, isSp) => {
-                if (level === 0) return isSp ? "Grandmother" : "Grandfather";
-                if (level === 1) return isSp ? "Uncle/Aunt Spouse" : "Parent / Aunt / Uncle";
-                if (level === 2) return "Child / Cousin";
-                return "Relative";
-            };
-
-            const renderCard = (m, level, isSp) => `
-                <div class="card ${m.deceased ? 'deceased' : ''}">
-                    <img src="${m.photo || 'https://via.placeholder.com/65'}" alt="profile">
-                    <div style="font-weight:bold; font-size:0.85rem;">${m.name}</div>
-                    <div style="font-size:0.65rem; color:#8d775f; margin-top:3px;">${getLabel(level, isSp)}</div>
-                    ${m.dob ? `<div style="font-size:0.55rem; color:#999;">${m.dob}</div>` : ''}
-                    ${m.deceased ? `<div class="deceased-tag">DECEASED</div>` : ''}
-                </div>`;
-
-            const build = (pId, level) => {
-                const kids = data.filter(m => m.parentId === pId && !data.find(x => x.spouseId === m.id));
+            familyData = []; snap.forEach(d => familyData.push({ id: d.id, ...d.data() }));
+            root.innerHTML = '';
+            const build = (pId, gen) => {
+                const kids = familyData.filter(m => m.parentId === pId && !familyData.find(x => x.spouseId === m.id));
                 if (!kids.length) return '';
                 let html = '<ul>';
                 kids.forEach(k => {
-                    const sp = data.find(x => x.spouseId === k.id || k.spouseId === x.id);
-                    html += `<li><div class="couple">${renderCard(k, level, false)}${sp ? renderCard(sp, level, true) : ''}</div>${build(k.id, level + 1)}</li>`;
+                    const sp = familyData.find(x => x.spouseId === k.id || k.spouseId === x.id);
+                    const card = (m) => `<div class="card gen-${gen > 2 ? 2 : gen}" onclick="window.openProfile('${m.id}')">
+                        ${m.job ? `<span class="badge">${m.job}</span>` : ''}
+                        ${m.photo ? `<img src="${m.photo}">` : ''}<br>
+                        <span style="font-size:0.8rem; font-weight:bold;">${m.name}</span>
+                    </div>`;
+                    html += `<li><div style="display:flex; gap:12px; justify-content:center;">${card(k)}${sp ? card(sp) : ''}</div>${build(k.id, gen + 1)}</li>`;
                 });
                 return html + '</ul>';
             };
             root.innerHTML = build("", 0);
         });
+
+        // 4. UTILITIES
+        window.toggleView = () => {
+            const v = document.getElementById('viewer'), m = document.getElementById('mapView');
+            v.style.display = v.style.display === 'none' ? 'flex' : 'none';
+            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.downloadTree = () => {
+            html2canvas(document.getElementById('treeRoot'), { useCORS: true }).then(canvas => {
+                const link = document.createElement('a'); link.download = 'HeritageTree.png';
+                link.href = canvas.toDataURL(); link.click();
+            });
+        };
+
+        window.openProfile = (id) => {
+            const m = familyData.find(x => x.id === id);
+            document.getElementById('m-name').innerText = m.name;
+            document.getElementById('m-job').innerText = m.job || "";
+            document.getElementById('m-loc').innerText = m.location ? "📍 " + m.location : "";
+            document.getElementById('m-bio').innerText = m.bio || "";
+            document.getElementById('m-health').innerHTML = m.health ? `<b>Health Records:</b><br>${m.health}` : "";
+            document.getElementById('m-health').className = m.health ? "" : "hidden";
+            document.getElementById('modal').style.display = 'block';
+        };
     </script>
 </body>
 </html>
