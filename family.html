@@ -1,276 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>My Maternal Heritage Archive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #f4f1ea;
-            --text: #2e2724;
-            --line: #6d4c41;
-            --male: #e8f5e9;
-            --female: #fce4ec;
-            --border: #5d4037;
-        }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Crimson Text', serif;
-            margin: 0;
-            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
-        }
-        #viewer {
-            padding: 80px 40px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .tree { text-align: center; position: relative; }
-        .tree ul {
-            padding-top: 40px;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 0;
-        }
-        .tree li {
-            list-style: none;
-            position: relative;
-            padding: 40px 25px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 180px;
-        }
-        .tree li::before,
-        .tree li::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            border-top: 3px solid var(--line);
-            width: 50%;
-            height: 20px;
-        }
-        .tree li::before { right: 50%; }
-        .tree li::after {
-            left: 50%;
-            border-left: 3px solid var(--line);
-        }
-        .tree li:only-child::after,
-        .tree li:only-child::before,
-        .tree li:first-child::before,
-        .tree li:last-child::after {
-            display: none;
-        }
-        .tree ul ul::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            border-left: 3px solid var(--line);
-            height: 40px;
-        }
-        .couple-connector {
-            position: absolute;
-            top: 60px;
-            height: 3px;
-            background: var(--line);
-            width: 80%;
-            max-width: 220px;
-            z-index: -1;
-        }
-        .card {
-            background: white;
-            border: 3px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            width: 160px;
-            min-height: 220px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-            cursor: pointer;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-        .card:hover { transform: translateY(-6px); }
-        .card.male { background: var(--male); }
-        .card.female { background: var(--female); }
-        .card.deceased {
-            opacity: 0.78;
-            filter: grayscale(0.4);
-            border-style: dashed;
-        }
-        .card img {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--border);
-            margin-bottom: 10px;
-        }
-        #panel {
-            position: fixed;
-            top: 0;
-            right: -360px;
-            width: 340px;
-            height: 100%;
-            background: white;
-            border-left: 5px solid var(--border);
-            transition: right 0.4s;
-            padding: 25px;
-            overflow-y: auto;
-            z-index: 200;
-        }
-        #panel.open { right: 0; }
-        .ui {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            display: flex;
-            gap: 12px;
-        }
-        .btn {
-            background: var(--border);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            border: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Family Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Crimson Text', serif; background: #f4f1ea; padding: 20px; }
+  .tree { display: flex; flex-direction: column; align-items: center; }
+  .spouse { display: flex; gap: 10px; position: relative; }
+  .person { border: 1px solid #333; border-radius: 5px; padding: 10px 15px; min-width: 80px; text-align: center; background: #fff; position: relative; }
+  
+  .children { display: flex; justify-content: center; position: relative; margin-top: 20px; }
+  
+  /* Vertical line from parent to children */
+  .line-down { position: absolute; width: 2px; background: #333; top: 100%; }
+  /* Horizontal line connecting children */
+  .line-horizontal { position: absolute; height: 2px; background: #333; top: 0; left: 0; right: 0; }
+</style>
 </head>
 <body>
 
-<div id="panel">
-    <button onclick="document.getElementById('panel').classList.remove('open')" style="float:right; font-size:2.2rem; border:none; background:none; cursor:pointer;">×</button>
-    <h2 id="pName"></h2>
-    <div id="pDetails"></div>
-    <a id="editLink" class="btn" style="display:block; margin-top:20px; text-align:center;">Edit This Person</a>
-</div>
+<h2>Family Tree</h2>
+<div class="tree" id="familyTree"></div>
 
-<div id="viewer">
-    <div id="treeRoot" class="tree"></div>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-<div class="ui">
-    <a href="add-family.html" class="btn">Add / Edit Family</a>
-    <button class="btn" onclick="window.print()">Print Tree</button>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
-<script>
-const app = firebase.initializeApp({
-    apiKey: "YOUR_API_KEY",
-    projectId: "family-tree-aec4a"
+// Firebase setup
+const app = initializeApp({
+  apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+  projectId: "family-tree-aec4a"
 });
+const db = getFirestore(app);
 
-const db = firebase.firestore();
-let familyData = [];
+let people = [];
 
-db.collection("family").onSnapshot(snap => {
-    familyData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderTree();
-});
-
-function formatDate(iso) {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+// Get children of a person
+function getChildren(parentId) {
+  return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
 }
 
-function getName(id) {
-    const p = familyData.find(x => x.id === id);
-    return p ? p.name || 'Unnamed' : '—';
-}
+// Create tree recursively
+function createPersonTree(person) {
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.alignItems = 'center';
+  container.style.position = 'relative';
 
-window.openDetails = function(id) {
-    const person = familyData.find(p => p.id === id);
-    if (!person) return;
+  // Person + spouse
+  const spouseDiv = document.createElement('div');
+  spouseDiv.className = 'spouse';
+  const selfDiv = document.createElement('div');
+  selfDiv.className = 'person';
+  selfDiv.textContent = person.name || '—';
+  spouseDiv.appendChild(selfDiv);
 
-    document.getElementById('pName').textContent = person.name || "Unnamed";
-
-    let html = `
-        <p><b>Born:</b> ${formatDate(person.dob)}</p>
-        ${person.isDeceased ? `<p><b>Passed:</b> ${formatDate(person.dod)}</p>` : ''}
-        ${person.bio ? `<p><b>Bio:</b> ${person.bio}</p>` : ''}
-        <hr style="margin:15px 0;">
-        <p><b>Mother:</b> ${getName(person.motherId)}</p>
-        <p><b>Father:</b> ${getName(person.fatherId)}</p>
-    `;
-
-    document.getElementById('pDetails').innerHTML = html;
-    document.getElementById('editLink').href = `add-family.html?id=${id}`;
-    document.getElementById('panel').classList.add('open');
-};
-
-function renderTree() {
-    const root = document.getElementById('treeRoot');
-    root.innerHTML = '';
-
-    if (familyData.length === 0) {
-        root.innerHTML = '<p style="text-align:center; padding:60px; color:#555;">No family members loaded yet.</p>';
-        return;
-    }
-
-    const roots = familyData.filter(p => !p.motherId && !p.fatherId);
-
-    roots.forEach(r => {
-        const container = document.createElement('div');
-        container.style.margin = '60px 0';
-        container.innerHTML = buildNode(r.id);
-        root.appendChild(container);
-    });
-}
-
-function buildNode(id) {
-    const p = familyData.find(x => x.id === id);
-    if (!p) return '';
-
-    const spouse = p.spouseId
-        ? familyData.find(s => s.id === p.spouseId)
-        : familyData.find(s => s.spouseId === p.id);
-
-    const children = familyData.filter(c =>
-        c.motherId === p.id || c.fatherId === p.id
-    );
-
-    let html = '<ul><li><div style="display:flex; gap:40px; justify-content:center; position:relative;">';
-
-    html += `
-        <div class="card ${p.gender || ''} ${p.isDeceased ? 'deceased' : ''}" onclick="openDetails('${p.id}')">
-            ${p.photo ? `<img src="${p.photo}">` : ''}
-            <div style="font-weight:bold;">${p.name || '?'}</div>
-        </div>
-    `;
-
+  if (person.spouseId) {
+    const spouse = people.find(x => x.id === person.spouseId);
     if (spouse) {
-        html += `
-            <div class="card ${spouse.gender || ''} ${spouse.isDeceased ? 'deceased' : ''}" onclick="openDetails('${spouse.id}')">
-                ${spouse.photo ? `<img src="${spouse.photo}">` : ''}
-                <div style="font-weight:bold;">${spouse.name || '?'}</div>
-            </div>
-            <div class="couple-connector"></div>
-        `;
+      const sDiv = document.createElement('div');
+      sDiv.className = 'person';
+      sDiv.textContent = spouse.name || '—';
+      spouseDiv.appendChild(sDiv);
     }
+  }
+  container.appendChild(spouseDiv);
 
-    html += '</div>';
+  // Children
+  const children = getChildren(person.id);
+  if (children.length) {
+    // Vertical line from parents to horizontal connector
+    const lineDown = document.createElement('div');
+    lineDown.className = 'line-down';
+    lineDown.style.height = '20px';
+    lineDown.style.left = '50%';
+    spouseDiv.appendChild(lineDown);
 
-    if (children.length) {
-        html += '<ul>';
-        children.forEach(child => {
-            html += `<li>${buildNode(child.id)}</li>`;
-        });
-        html += '</ul>';
-    }
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 'children';
 
-    html += '</li></ul>';
-    return html;
+    // Horizontal line connecting all children
+    const hLine = document.createElement('div');
+    hLine.className = 'line-horizontal';
+    hLine.style.width = `${children.length * 100}px`;
+    hLine.style.height = '2px';
+    hLine.style.top = '0';
+    childrenContainer.appendChild(hLine);
+
+    children.forEach(child => {
+      const childTree = createPersonTree(child);
+      childTree.style.margin = '0 20px';
+      childrenContainer.appendChild(childTree);
+    });
+
+    container.appendChild(childrenContainer);
+  }
+
+  return container;
 }
-</script>
 
+// Build full tree from roots (no parents)
+function buildTree() {
+  const tree = document.getElementById('familyTree');
+  tree.innerHTML = '';
+  const roots = people.filter(p => !p.motherId && !p.fatherId);
+  roots.forEach(root => tree.appendChild(createPersonTree(root)));
+}
+
+// Firebase real-time updates
+onSnapshot(collection(db, "family"), snap => {
+  people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  buildTree();
+});
+</script>
 </body>
 </html>
