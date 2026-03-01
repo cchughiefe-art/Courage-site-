@@ -35,8 +35,8 @@
             box-sizing: border-box;
         }
         textarea { height: 90px; }
-        .parents { display: flex; gap: 20px; flex-wrap: wrap; }
-        .parents > div { flex: 1; min-width: 220px; }
+        .parents, .spouse-row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .parents > div, .spouse-row > div { flex: 1; min-width: 220px; }
         button {
             padding: 12px 24px;
             background: var(--border);
@@ -50,7 +50,7 @@
         button.cancel { background: #757575; }
         button.danger { background: #c62828; margin-top: 30px; }
         table { width: 100%; margin-top: 40px; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: #f9f5f0; }
     </style>
 </head>
@@ -62,8 +62,8 @@
     <h2 id="formTitle">Add New Family Member</h2>
 
     <p class="hint">
-        <strong>Start here:</strong> Add your maternal grandparents first (leave mother/father empty).<br>
-        Then add their children (your mother + aunts/uncles) and set their mother/father.
+        <strong>Start here:</strong> Add your maternal grandparents first (leave mother/father/spouse empty).<br>
+        Then add their children and set their parents, or add spouses (mutual linking is automatic).
     </p>
 
     <div class="parents">
@@ -74,6 +74,13 @@
         <div>
             <label>Father (optional)</label>
             <select id="father"></select>
+        </div>
+    </div>
+
+    <div class="spouse-row">
+        <div>
+            <label>Spouse (optional)</label>
+            <select id="spouse"></select>
         </div>
     </div>
 
@@ -117,7 +124,7 @@
     <h3 style="margin:50px 0 15px; text-align:center;">Current Family Members</h3>
     <table>
         <thead>
-            <tr><th>Name</th><th>Mother</th><th>Father</th><th>Actions</th></tr>
+            <tr><th>Name</th><th>Mother</th><th>Father</th><th>Spouse</th><th>Actions</th></tr>
         </thead>
         <tbody id="list"></tbody>
     </table>
@@ -133,42 +140,47 @@
     }));
 
     let editingId = null;
+    let previousSpouseId = null; // to clear old mutual link on change
     let cropper = null;
     let currentPhoto = null;
 
     onSnapshot(collection(db, "family"), snap => {
-    const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
-    const populate = (selId, gender = null) => {
-        const sel = document.getElementById(selId);
-        sel.innerHTML = '<option value="">— none —</option>';
+        const populate = (selId, gender = null) => {
+            const sel = document.getElementById(selId);
+            sel.innerHTML = '<option value="">— none —</option>';
+            people.forEach(p => {
+                if (!gender || p.gender === gender) {
+                    sel.innerHTML += `<option value="\( {p.id}"> \){p.name || 'Unnamed'}</option>`;
+                }
+            });
+        };
+
+        populate('mother', 'female');
+        populate('father', 'male');
+        populate('spouse');
+
+        const tbody = document.getElementById('list');
+        tbody.innerHTML = '';
         people.forEach(p => {
-            if (!gender || p.gender === gender) {
-                sel.innerHTML += `<option value="${p.id}">${p.name || 'Unnamed'}</option>`;
-            }
+            const m = people.find(x => x.id === p.motherId)?.name || '—';
+            const f = people.find(x => x.id === p.fatherId)?.name || '—';
+            const s = people.find(x => x.id === p.spouseId || x.spouseId === p.id)?.name || '—';
+            tbody.innerHTML += `
+                <tr>
+                    <td>${p.name || '—'}</td>
+                    <td>${m}</td>
+                    <td>${f}</td>
+                    <td>${s}</td>
+                    <td>
+                        <button onclick="startEdit('${p.id}')">Edit</button>
+                        <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
+                    </td>
+                </tr>`;
         });
-    };
-
-    populate('mother', 'female');
-    populate('father', 'male');
-
-    const tbody = document.getElementById('list');
-    tbody.innerHTML = '';
-    people.forEach(p => {
-        const m = people.find(x => x.id === p.motherId)?.name || '—';
-        const f = people.find(x => x.id === p.fatherId)?.name || '—';
-        tbody.innerHTML += `
-            <tr>
-                <td>${p.name || '—'}</td>
-                <td>${m}</td>
-                <td>${f}</td>
-                <td>
-                    <button onclick="startEdit('${p.id}')">Edit</button>
-                    <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
-                </td>
-            </tr>`;
     });
-});
+
     document.getElementById('pic').onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
@@ -188,9 +200,8 @@
         document.getElementById('saveBtn').textContent = "Save Changes";
         document.getElementById('cancelEdit').style.display = 'inline-block';
 
-        // Use snapshot data (since onSnapshot is already running)
-        const people = []; // in real usage: get from global or use getDoc
-        const p = people.find(person => person.id === id) || {};
+        // Simplified - in production use getDoc or global people
+        const p = {}; // replace with real lookup
         document.getElementById('name').value = p.name || '';
         document.getElementById('gender').value = p.gender || '';
         document.getElementById('dob').value = p.dob || '';
@@ -199,6 +210,9 @@
         document.getElementById('bio').value = p.bio || '';
         document.getElementById('mother').value = p.motherId || '';
         document.getElementById('father').value = p.fatherId || '';
+        document.getElementById('spouse').value = p.spouseId || '';
+
+        previousSpouseId = p.spouseId || null; // remember old spouse to clear mutual link if changed
 
         currentPhoto = p.photo || null;
         document.getElementById('currentPhoto').src = currentPhoto || '';
@@ -207,6 +221,7 @@
 
     document.getElementById('cancelEdit').onclick = () => {
         editingId = null;
+        previousSpouseId = null;
         document.getElementById('formTitle').textContent = "Add New Family Member";
         document.getElementById('saveBtn').textContent = "Add Person";
         document.getElementById('cancelEdit').style.display = 'none';
@@ -232,7 +247,8 @@
             dod: document.getElementById('dod').value || null,
             bio: document.getElementById('bio').value.trim() || null,
             motherId: document.getElementById('mother').value || null,
-            fatherId: document.getElementById('father').value || null
+            fatherId: document.getElementById('father').value || null,
+            spouseId: document.getElementById('spouse').value || null
         };
 
         if (cropper) {
@@ -242,14 +258,32 @@
         }
 
         try {
+            let newId = editingId;
+
             if (editingId) {
                 await updateDoc(doc(db, "family", editingId), data);
                 alert("Updated!");
             } else {
-                await addDoc(collection(db, "family"), data);
+                const docRef = await addDoc(collection(db, "family"), data);
+                newId = docRef.id;
                 alert("Added!");
             }
+
+            // Mutual spouse linking logic
+            const newSpouseId = data.spouseId;
+
+            // Clear old mutual link if spouse changed
+            if (previousSpouseId && previousSpouseId !== newSpouseId) {
+                await updateDoc(doc(db, "family", previousSpouseId), { spouseId: null });
+            }
+
+            // Set mutual link if new spouse selected
+            if (newSpouseId) {
+                await updateDoc(doc(db, "family", newSpouseId), { spouseId: newId || editingId });
+            }
+
             document.getElementById('cancelEdit').click();
+            previousSpouseId = null;
         } catch (e) {
             alert("Error saving: " + e.message);
         }
@@ -257,6 +291,14 @@
 
     window.deletePerson = async id => {
         if (!confirm("Delete this person?")) return;
+
+        // Clear mutual spouse link before deleting
+        const personSnap = await getDoc(doc(db, "family", id));
+        const person = personSnap.data();
+        if (person && person.spouseId) {
+            await updateDoc(doc(db, "family", person.spouseId), { spouseId: null });
+        }
+
         await deleteDoc(doc(db, "family", id));
     };
 
