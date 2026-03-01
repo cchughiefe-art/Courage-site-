@@ -2,93 +2,179 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Family Heritage</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <title>My Maternal Heritage Archive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #fdf5e6; --text: #5d4037; --line: #8d775f; --card: #fff; }
-        body.dark { --bg: #121212; --text: #e0e0e0; --line: #8d775f; --card: #1e1e1e; }
-        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; margin: 0; transition: background 0.4s; }
-        
-        #mapView { width: 100vw; height: 100vh; display: none; position: fixed; top: 0; z-index: 100; }
-        #viewer { width: 100%; min-height: 100vh; display: flex; justify-content: center; padding: 100px 0; overflow-x: auto; }
-        
-        .tree ul { display: flex; justify-content: center; padding-top: 30px; }
-        .tree li { position: relative; padding: 30px 10px 0 10px; list-style: none; }
-        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid var(--line); width: 50%; height: 30px; }
-        .tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line); }
+        :root {
+            --bg: #f4f1ea;
+            --text: #2e2724;
+            --line: #6d4c41;
+            --male: #e8f5e9;
+            --female: #fce4ec;
+            --border: #5d4037;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Crimson Text', serif;
+            margin: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+        }
+        #viewer { padding: 80px 40px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        .tree { text-align: center; position: relative; }
+        .tree ul { padding-top: 40px; display: flex; justify-content: center; flex-wrap: wrap; margin: 0; }
+        .tree li { list-style: none; position: relative; padding: 40px 25px 0; display: flex; flex-direction: column; align-items: center; min-width: 180px; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; border-top: 3px solid var(--line); width: 50%; height: 20px; }
+        .tree li::before { right: 50%; }
+        .tree li::after { left: 50%; border-left: 3px solid var(--line); }
         .tree li:only-child::after, .tree li:only-child::before, .tree li:first-child::before, .tree li:last-child::after { display: none; }
-        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid var(--line); height: 30px; }
-
-        .card { border: 3px solid var(--line); padding: 15px; border-radius: 12px; background: var(--card); min-width: 140px; cursor: pointer; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; }
-
-        .ui { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1000; }
-        .btn { background: var(--line); color: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 3px solid var(--line); height: 40px; }
+        .couple-connector { position: absolute; top: 60px; height: 3px; background: var(--line); width: 80%; max-width: 220px; z-index: -1; }
+        .card {
+            background: white; border: 3px solid var(--border); border-radius: 12px; padding: 16px;
+            width: 160px; min-height: 220px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); cursor: pointer; text-align: center; transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-6px); }
+        .card.male { background: var(--male); }
+        .card.female { background: var(--female); }
+        .card.deceased { opacity: 0.78; filter: grayscale(0.4); border-style: dashed; }
+        .card img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border); margin-bottom: 10px; }
+        .candle { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 1.6rem; animation: flicker 2s infinite alternate; }
+        @keyframes flicker { 0%,100% { opacity: 0.8; } 50% { opacity: 1; transform: translateX(-50%) scale(1.08); } }
+        #panel {
+            position: fixed; top: 0; right: -360px; width: 340px; height: 100%;
+            background: white; border-left: 5px solid var(--border); transition: right 0.4s; padding: 25px; overflow-y: auto; z-index: 200;
+        }
+        #panel.open { right: 0; }
+        .ui { position: fixed; bottom: 30px; left: 30px; display: flex; gap: 12px; }
+        .btn { background: var(--border); color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; text-decoration: none; }
     </style>
 </head>
 <body>
-    <div id="mapView"></div>
-    <div id="viewer"><div id="treeRoot" class="tree"></div></div>
-    
+    <div id="panel">
+        <button onclick="document.getElementById('panel').classList.remove('open')" style="float:right; font-size:2.2rem; border:none; background:none; cursor:pointer;">×</button>
+        <h2 id="pName"></h2>
+        <div id="pDetails"></div>
+        <a id="editLink" class="btn" style="display:block; margin-top:20px; text-align:center;">Edit This Person</a>
+    </div>
+
+    <div id="viewer">
+        <div id="treeRoot" class="tree"></div>
+    </div>
+
     <div class="ui">
-        <button class="btn" onclick="toggleTheme()">🌓 Dark/Light</button>
-        <button class="btn" onclick="toggleView()">🗺️ Open Map</button>
+        <a href="add-family.html" class="btn">Add / Edit Family</a>
+        <button class="btn" onclick="window.print()">Print Tree</button>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-        
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
-        let familyData = [], map, markers = [];
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-        // Dark Mode Logic
-        window.toggleTheme = () => {
-            document.body.classList.toggle('dark');
-            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-        };
-        if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+        const db = getFirestore(initializeApp({
+            apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+            projectId: "family-tree-aec4a"
+        }));
 
-        // Automatic GPS Sync
-        onSnapshot(collection(db, "family"), (snap) => {
-            familyData = []; snap.forEach(d => familyData.push({ id: d.id, ...d.data() }));
+        let familyData = [];
+
+        onSnapshot(collection(db, "family"), snap => {
+            familyData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderTree();
         });
 
-        function renderTree() {
-            const root = document.getElementById('treeRoot'); root.innerHTML = '';
-            const build = (pId) => {
-                const kids = familyData.filter(m => m.parentId === pId && !familyData.find(x => x.spouseId === m.id));
-                if (!kids.length) return '';
-                let html = '<ul>';
-                kids.forEach(k => {
-                    const sp = familyData.find(x => x.spouseId === k.id || k.spouseId === x.id);
-                    const card = (m) => `<div class="card" onclick="alert('${m.name}')">
-                        ${m.photo ? `<img src="${m.photo}"><br>` : ''}<b>${m.name}</b></div>`;
-                    html += `<li><div style="display:flex; gap:10px; justify-content:center;">${card(k)}${sp ? card(sp) : ''}</div>${build(k.id)}</li>`;
-                });
-                return html + '</ul>';
-            };
-            root.innerHTML = build("");
+        function formatDate(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         }
 
-        window.toggleView = () => {
-            const mDiv = document.getElementById('mapView');
-            mDiv.style.display = mDiv.style.display === 'none' ? 'block' : 'none';
-            if(mDiv.style.display === 'block') {
-                if(!map) { 
-                    map = L.map('mapView').setView([0, 0], 2);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                }
-                map.invalidateSize();
-                markers.forEach(m => map.removeLayer(m));
-                familyData.forEach(p => {
-                    if(p.lat && p.lng) markers.push(L.marker([p.lat, p.lng]).addTo(map).bindPopup(p.name));
-                });
-            }
+        function getName(id) {
+            const p = familyData.find(x => x.id === id);
+            return p ? p.name || 'Unnamed' : '—';
+        }
+
+        window.openDetails = id => {
+            const person = familyData.find(p => p.id === id);
+            if (!person) return;
+
+            document.getElementById('pName').textContent = person.name || "Unnamed";
+
+            let html = `
+                <p><b>Born:</b> ${formatDate(person.dob)}</p>
+                \( {person.isDeceased ? `<p><b>Passed:</b> \){formatDate(person.dod)}</p>` : ''}
+                \( {person.bio ? `<p><b>Bio:</b> \){person.bio}</p>` : ''}
+                <hr style="margin:15px 0;">
+                <p><b>Mother:</b> ${getName(person.motherId)}</p>
+                <p><b>Father:</b> ${getName(person.fatherId)}</p>
+            `;
+
+            document.getElementById('pDetails').innerHTML = html;
+            document.getElementById('editLink').href = `add-family.html?id=${id}`;
+            document.getElementById('panel').classList.add('open');
         };
+
+        function renderTree() {
+            const root = document.getElementById('treeRoot');
+            root.innerHTML = '';
+
+            const today = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'});
+
+            const roots = familyData.filter(p => !p.motherId && !p.fatherId);
+
+            if (!roots.length && familyData.length > 0) {
+                root.innerHTML = '<p style="text-align:center; padding:60px;">No root ancestors found.</p>';
+                return;
+            }
+
+            roots.forEach(r => {
+                const container = document.createElement('div');
+                container.style.margin = '60px 0';
+                container.innerHTML = buildNode(r.id, today);
+                root.appendChild(container);
+            });
+        }
+
+        function buildNode(id, today) {
+            const p = familyData.find(x => x.id === id);
+            if (!p) return '';
+
+            const spouse = familyData.find(s => s.spouseId === id || p.spouseId === s.id);
+            const children = familyData.filter(c => c.motherId === id || c.fatherId === id);
+
+            let html = '<ul><li><div style="display:flex; gap:40px; justify-content:center; position:relative;">';
+
+            html += createCard(p, today);
+            if (spouse) {
+                html += createCard(spouse, today);
+                html += '<div class="couple-connector"></div>';
+            }
+
+            html += '</div>';
+
+            if (children.length) {
+                html += '<ul>';
+                children.forEach(child => html += `<li>${buildNode(child.id, today)}</li>`);
+                html += '</ul>';
+            }
+
+            html += '</li></ul>';
+            return html;
+        }
+
+        function createCard(p, today) {
+            const isAnniv = p.isDeceased && p.dod && p.dod.includes(today.slice(0,5));
+            return `
+                <div class="card \( {p.gender || ''} \){p.isDeceased ? 'deceased' : ''}" onclick="openDetails('${p.id}')">
+                    ${isAnniv ? '<span class="candle">🕯️</span>' : ''}
+                    \( {p.photo ? `<img src=" \){p.photo}" alt="${p.name}">` : ''}
+                    <div style="font-weight:bold;">${p.name || '?'}</div>
+                    <div style="font-size:0.85rem; opacity:0.8;">
+                        ${p.dob ? 'b. ' + formatDate(p.dob).split(',')[0] : ''}
+                    </div>
+                </div>
+            `;
+        }
     </script>
 </body>
 </html>
-

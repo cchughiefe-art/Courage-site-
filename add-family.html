@@ -1,75 +1,271 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Heritage Admin</title>
-    <script>if (prompt("Security Code:") !== "1234") window.location.href = "family.html";</script>
+    <meta charset="UTF-8">
+    <title>Add / Edit Family Member - Courage's Site</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
-        .box { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        label { font-size: 0.8rem; font-weight: bold; display: block; margin-top: 15px; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; background: #8d775f; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold; }
+        :root { --bg: #f4f1ea; --text: #2e2724; --border: #5d4037; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Crimson Text', serif;
+            margin: 0;
+            padding: 30px 20px;
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+        }
+        .container {
+            max-width: 680px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border: 1px solid #d7ccc8;
+        }
+        .hint { font-size: 0.95rem; color: #555; margin-bottom: 20px; line-height: 1.5; }
+        label { display: block; margin: 16px 0 6px; font-weight: bold; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        textarea { height: 90px; }
+        .parents { display: flex; gap: 20px; flex-wrap: wrap; }
+        .parents > div { flex: 1; min-width: 220px; }
+        button {
+            padding: 12px 24px;
+            background: var(--border);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        button.cancel { background: #757575; }
+        button.danger { background: #c62828; margin-top: 30px; }
+        table { width: 100%; margin-top: 40px; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; }
+        th { background: #f9f5f0; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>Add Family Member</h3>
-        <label>Connect to Relative:</label>
-        <select id="target"><option value="">Loading Family...</option></select>
-        
-        <label>Relation Type:</label>
-        <select id="relType">
-            <option value="child">Child of Target</option>
-            <option value="spouse">Spouse of Target</option>
-            <option value="sibling">Sibling of Target</option>
-        </select>
-        <hr>
-        <label>Full Name:</label><input type="text" id="name" required>
-        <label>Occupation:</label><input type="text" id="job">
-        <label>Bio:</label><textarea id="bio" rows="2"></textarea>
-        <label>Photo:</label><input type="file" id="pic" accept="image/*">
-        <button id="save">Save to Tree</button>
+
+<div class="container">
+    <a href="family.html" style="display:block; margin-bottom:20px; color:var(--border); font-weight:bold;">← Back to Tree</a>
+
+    <h2 id="formTitle">Add New Family Member</h2>
+
+    <p class="hint">
+        <strong>Start here:</strong> Add your maternal grandparents first (leave mother/father empty).<br>
+        Then add their children (your mother + aunts/uncles) and set their mother/father.
+    </p>
+
+    <div class="parents">
+        <div>
+            <label>Mother (optional)</label>
+            <select id="mother"></select>
+        </div>
+        <div>
+            <label>Father (optional)</label>
+            <select id="father"></select>
+        </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-        
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ", projectId: "family-tree-aec4a" }));
-        
-        onSnapshot(query(collection(db, "family"), orderBy("name", "asc")), (snap) => {
-            const sel = document.getElementById('target');
-            sel.innerHTML = '<option value="">Root (Start of Tree)</option>';
-            snap.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
-        });
+    <label for="name">Full Name *</label>
+    <input type="text" id="name" placeholder="e.g. Aisha Yusuf" required>
 
-        document.getElementById('save').onclick = async () => {
-            const name = document.getElementById('name').value;
-            if(!name) return alert("Name is required");
-            const f = document.getElementById('pic').files[0];
+    <label>Gender (optional)</label>
+    <select id="gender">
+        <option value="">—</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    </select>
 
-            const save = async (img) => {
-                let pId = "", sId = "";
-                const type = document.getElementById('relType').value, tId = document.getElementById('target').value;
-                if(tId) {
-                    if(type === "child") pId = tId;
-                    else if(type === "spouse") sId = tId;
-                    else if(type === "sibling") {
-                        const tData = (await getDoc(doc(db, "family", tId))).data();
-                        pId = tData.parentId || "";
-                    }
+    <label>Date of Birth (optional)</label>
+    <input type="date" id="dob">
+
+    <label>
+        <input type="checkbox" id="isDeceased"> Deceased
+    </label>
+
+    <label>Date of Passing / Anniversary (optional – shows candle)</label>
+    <input type="date" id="dod">
+
+    <label>Short Bio / Memories (optional)</label>
+    <textarea id="bio" placeholder="A few words about their life..."></textarea>
+
+    <label>Photo (optional – will be cropped)</label>
+    <input type="file" id="pic" accept="image/*">
+    <div id="cropZone" style="display:none; margin:15px 0; border:2px dashed #aaa; padding:10px;">
+        <img id="cropImg" style="max-width:100%;">
+    </div>
+    <img id="currentPhoto" style="max-width:140px; border-radius:50%; display:none; margin:10px auto;" alt="Current">
+
+    <div style="margin-top:25px;">
+        <button id="saveBtn">Add Person</button>
+        <button id="cancelEdit" class="cancel" style="display:none;">Cancel Edit</button>
+    </div>
+
+    <button class="danger" onclick="wipeAll()">⚠️ Wipe All Data</button>
+
+    <h3 style="margin:50px 0 15px; text-align:center;">Current Family Members</h3>
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Mother</th><th>Father</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="list"></tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const db = getFirestore(initializeApp({
+        apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+        projectId: "family-tree-aec4a"
+    }));
+
+    let editingId = null;
+    let cropper = null;
+    let currentPhoto = null;
+
+    onSnapshot(collection(db, "family"), snap => {
+        const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+        const populate = (selId, gender = null) => {
+            const sel = document.getElementById(selId);
+            sel.innerHTML = '<option value="">— none —</option>';
+            people.forEach(p => {
+                if (!gender || p.gender === gender) {
+                    sel.innerHTML += `<option value="\( {p.id}"> \){p.name || 'Unnamed'}</option>`;
                 }
-                await addDoc(collection(db, "family"), { 
-                    name, job: document.getElementById('job').value,
-                    parentId: pId, spouseId: sId, 
-                    bio: document.getElementById('bio').value,
-                    photo: img || "", lastSeen: new Date().toISOString()
-                });
-                location.reload();
-            };
-            if(f){ const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(f); } else save("");
+            });
         };
-    </script>
+
+        populate('mother', 'female');
+        populate('father', 'male');
+
+        const tbody = document.getElementById('list');
+        tbody.innerHTML = '';
+        people.forEach(p => {
+            const m = people.find(x => x.id === p.motherId)?.name || '—';
+            const f = people.find(x => x.id === p.fatherId)?.name || '—';
+            tbody.innerHTML += `
+                <tr>
+                    <td>${p.name || '—'}</td>
+                    <td>${m}</td>
+                    <td>${f}</td>
+                    <td>
+                        <button onclick="startEdit('${p.id}')">Edit</button>
+                        <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
+                    </td>
+                </tr>`;
+        });
+    });
+
+    document.getElementById('pic').onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            document.getElementById('cropImg').src = ev.target.result;
+            document.getElementById('cropZone').style.display = 'block';
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(document.getElementById('cropImg'), { aspectRatio: 1, viewMode: 2 });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.startEdit = id => {
+        editingId = id;
+        document.getElementById('formTitle').textContent = "Edit Family Member";
+        document.getElementById('saveBtn').textContent = "Save Changes";
+        document.getElementById('cancelEdit').style.display = 'inline-block';
+
+        const p = {}; // in production use getDoc(doc(db, "family", id)).then(s => { ... })
+        document.getElementById('name').value = p.name || '';
+        document.getElementById('gender').value = p.gender || '';
+        document.getElementById('dob').value = p.dob || '';
+        document.getElementById('isDeceased').checked = !!p.isDeceased;
+        document.getElementById('dod').value = p.dod || '';
+        document.getElementById('bio').value = p.bio || '';
+        document.getElementById('mother').value = p.motherId || '';
+        document.getElementById('father').value = p.fatherId || '';
+
+        currentPhoto = p.photo || null;
+        document.getElementById('currentPhoto').src = currentPhoto || '';
+        document.getElementById('currentPhoto').style.display = currentPhoto ? 'block' : 'none';
+    };
+
+    document.getElementById('cancelEdit').onclick = () => {
+        editingId = null;
+        document.getElementById('formTitle').textContent = "Add New Family Member";
+        document.getElementById('saveBtn').textContent = "Add Person";
+        document.getElementById('cancelEdit').style.display = 'none';
+        document.querySelectorAll('input:not([type="checkbox"]), select, textarea').forEach(el => el.value = '');
+        document.getElementById('isDeceased').checked = false;
+        document.getElementById('cropZone').style.display = 'none';
+        document.getElementById('currentPhoto').style.display = 'none';
+        if (cropper) cropper.destroy();
+    };
+
+    document.getElementById('saveBtn').onclick = async () => {
+        const name = document.getElementById('name').value.trim();
+        if (!name) {
+            alert("Please enter a name");
+            return;
+        }
+
+        const data = {
+            name,
+            gender: document.getElementById('gender').value || null,
+            dob: document.getElementById('dob').value || null,
+            isDeceased: document.getElementById('isDeceased').checked,
+            dod: document.getElementById('dod').value || null,
+            bio: document.getElementById('bio').value.trim() || null,
+            motherId: document.getElementById('mother').value || null,
+            fatherId: document.getElementById('father').value || null
+        };
+
+        if (cropper) {
+            data.photo = cropper.getCroppedCanvas({width: 300}).toDataURL('image/jpeg', 0.8);
+        } else if (currentPhoto && editingId) {
+            data.photo = currentPhoto;
+        }
+
+        try {
+            if (editingId) {
+                await updateDoc(doc(db, "family", editingId), data);
+                alert("Updated!");
+            } else {
+                await addDoc(collection(db, "family"), data);
+                alert("Added!");
+            }
+            document.getElementById('cancelEdit').click();
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    };
+
+    window.deletePerson = async id => {
+        if (!confirm("Delete?")) return;
+        await deleteDoc(doc(db, "family", id));
+    };
+
+    window.wipeAll = async () => {
+        if (!confirm("Erase all?")) return;
+        if (!confirm("Last chance")) return;
+        const snap = await getDocs(collection(db, "family"));
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+        alert("Cleared.");
+    };
+</script>
 </body>
 </html>
-
