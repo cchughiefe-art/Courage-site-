@@ -3,29 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <title>Family Tree</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
-  body { font-family: 'Crimson Text', serif; background: #f4f1ea; padding: 20px; color: #333; transition: background 0.3s, color 0.3s; }
+  body { 
+    font-family: 'Crimson Text', serif; 
+    background: #f4f1ea; 
+    padding: 20px; 
+    color: #333; 
+    transition: background 0.3s, color 0.3s; 
+  }
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 30px;
+  }
   .tree { display: flex; flex-direction: column; align-items: center; }
-  .spouse { display: flex; gap: 10px; position: relative; }
-  .person { border: 1px solid #333; border-radius: 5px; padding: 10px 15px; min-width: 80px; text-align: center; background: #fff; position: relative; }
-  .children { display: flex; justify-content: center; position: relative; margin-top: 20px; }
-  .line-down { position: absolute; width: 2px; background: #333; top: 100%; }
-  .line-horizontal { position: absolute; height: 2px; background: #333; top: 0; left: 0; }
-  button { margin-right: 10px; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
+  .spouse { display: flex; gap: 10px; position: relative; margin-bottom: 20px; }
+  .person { 
+    border: 2px solid #333; 
+    border-radius: 10px; 
+    padding: 5px; 
+    width: 100px; 
+    text-align: center; 
+    background: #fff; 
+    position: relative; 
+    transition: transform 0.2s;
+  }
+  .person:hover { transform: scale(1.05); }
+  .person img { 
+    width: 80px; 
+    height: 80px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    display: block; 
+    margin: 0 auto 5px; 
+  }
+  .children { 
+    display: flex; 
+    justify-content: center; 
+    position: relative; 
+    margin-top: 30px; 
+  }
+  .line-down { 
+    position: absolute; 
+    width: 2px; 
+    background: #333; 
+    top: 100%; 
+  }
+  .line-horizontal { 
+    position: absolute; 
+    height: 2px; 
+    background: #333; 
+    top: 0; 
+    left: 0; 
+  }
+  .controls {
+    display: flex; 
+    justify-content: center; 
+    gap: 15px; 
+    margin-top: 30px;
+  }
+  .controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    font-weight: bold;
+    transition: all 0.2s;
+    background: #333;
+    color: #f4f1ea;
+  }
+  .controls button:hover {
+    background: #555;
+    color: #fff;
+  }
 </style>
 </head>
 <body>
 
 <h2>Family Tree</h2>
 
-<!-- Controls -->
-<div style="margin-bottom: 20px;">
-    <button id="toggleTheme">Toggle Day/Night</button>
-    <button id="adminPage">Admin Page</button>
-</div>
-
 <div class="tree" id="familyTree"></div>
+
+<!-- Controls at bottom -->
+<div class="controls">
+  <button id="toggleTheme">Toggle Day/Night</button>
+  <button id="adminPage">Admin Page</button>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
@@ -39,6 +105,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 let people = [];
+let displayed = new Set();
 
 // Day/Night toggle
 let darkMode = false;
@@ -48,18 +115,20 @@ document.getElementById('toggleTheme').addEventListener('click', () => {
     document.body.style.color = darkMode ? '#f4f1ea' : '#333';
 });
 
-// Admin button goes to Add/Edit form
+// Admin button
 document.getElementById('adminPage').addEventListener('click', () => {
     window.location.href = 'add-family.html';
 });
 
-// Helper to find children
+// Find children
 function getChildren(parentId) {
-    return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
+    return people.filter(p => (p.motherId === parentId || p.fatherId === parentId) && !displayed.has(p.id));
 }
 
 // Recursive tree creation
 function createPersonTree(person) {
+    displayed.add(person.id);
+
     const container = document.createElement('div');
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
@@ -69,17 +138,28 @@ function createPersonTree(person) {
     // Person + spouse
     const spouseDiv = document.createElement('div');
     spouseDiv.className = 'spouse';
+
     const selfDiv = document.createElement('div');
     selfDiv.className = 'person';
-    selfDiv.textContent = person.name || '—';
+    const img = document.createElement('img');
+    img.src = person.photo || 'https://via.placeholder.com/80?text=No+Photo';
+    const name = document.createElement('div');
+    name.textContent = person.name || '—';
+    selfDiv.appendChild(img);
+    selfDiv.appendChild(name);
     spouseDiv.appendChild(selfDiv);
 
     if (person.spouseId) {
-        const spouse = people.find(x => x.id === person.spouseId);
+        const spouse = people.find(p => p.id === person.spouseId);
         if (spouse) {
             const sDiv = document.createElement('div');
             sDiv.className = 'person';
-            sDiv.textContent = spouse.name || '—';
+            const sImg = document.createElement('img');
+            sImg.src = spouse.photo || 'https://via.placeholder.com/80?text=No+Photo';
+            const sName = document.createElement('div');
+            sName.textContent = spouse.name || '—';
+            sDiv.appendChild(sImg);
+            sDiv.appendChild(sName);
             spouseDiv.appendChild(sDiv);
         }
     }
@@ -89,23 +169,28 @@ function createPersonTree(person) {
     // Children
     const children = getChildren(person.id);
     if (children.length) {
-        const lineDown = document.createElement('div');
-        lineDown.className = 'line-down';
-        lineDown.style.height = '20px';
-        lineDown.style.left = '50%';
-        spouseDiv.appendChild(lineDown);
-
         const childrenContainer = document.createElement('div');
         childrenContainer.className = 'children';
 
+        // Horizontal connecting line
         const hLine = document.createElement('div');
         hLine.className = 'line-horizontal';
-        hLine.style.width = `${children.length * 100}px`;
+        hLine.style.width = `${children.length * 120}px`;
+        hLine.style.top = '10px';
+        hLine.style.left = `-${(children.length*60)-60}px`;
         childrenContainer.appendChild(hLine);
 
         children.forEach(child => {
             const childTree = createPersonTree(child);
             childTree.style.margin = '0 20px';
+            
+            // Vertical line to child
+            const vLine = document.createElement('div');
+            vLine.className = 'line-down';
+            vLine.style.height = '20px';
+            vLine.style.left = '50%';
+            childTree.appendChild(vLine);
+
             childrenContainer.appendChild(childTree);
         });
 
@@ -115,15 +200,16 @@ function createPersonTree(person) {
     return container;
 }
 
-// Build the tree
+// Build tree
 function buildTree() {
+    displayed.clear();
     const tree = document.getElementById('familyTree');
     tree.innerHTML = '';
     const roots = people.filter(p => !p.motherId && !p.fatherId);
     roots.forEach(root => tree.appendChild(createPersonTree(root)));
 }
 
-// Real-time Firebase updates
+// Firebase realtime
 onSnapshot(collection(db, "family"), snap => {
     people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     buildTree();
