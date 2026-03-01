@@ -66,31 +66,32 @@
         <a href="add-family.html" class="btn">Add / Edit Family</a>
         <button class="btn" onclick="window.print()">Print Tree</button>
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
-       <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
+    console.log("Script started running");
+
     const app = firebase.initializeApp({
         apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
         projectId: "family-tree-aec4a"
     });
     const db = firebase.firestore();
 
+    console.log("Firebase initialized");
+
     let familyData = [];
 
     db.collection("family").onSnapshot(snap => {
-        console.log("Firebase loaded successfully!");
-        console.log("Number of people:", snap.size);
+        console.log("onSnapshot triggered! Loaded " + snap.size + " documents");
         familyData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log("Data:", familyData);
+        console.log("Family data:", familyData);
         renderTree();
     }, err => {
-        console.error("Firebase error:", err.message);
+        console.error("Firestore listener failed:", err.message, err.code);
     });
+
+    console.log("Listener set up");
 
     function formatDate(iso) {
         if (!iso) return '—';
@@ -103,9 +104,9 @@
         return p ? p.name || 'Unnamed' : '—';
     }
 
-    window.openDetails = id => {
+    window.openDetails = function(id) {
         const person = familyData.find(p => p.id === id);
-        if (!person) return alert("Person not found");
+        if (!person) return;
 
         document.getElementById('pName').textContent = person.name || "Unnamed";
 
@@ -124,6 +125,7 @@
     };
 
     function renderTree() {
+        console.log("Rendering tree with " + familyData.length + " people");
         const root = document.getElementById('treeRoot');
         root.innerHTML = '';
 
@@ -132,9 +134,10 @@
             return;
         }
 
-        root.innerHTML = '<h3 style="text-align:center;">Loaded Family Members (debug mode)</h3><ul>';
+        // Debug list - shows all people
+        root.innerHTML = '<h3 style="text-align:center; color:#5d4037;">Loaded Family Members (debug)</h3><ul>';
         familyData.forEach(p => {
-            root.innerHTML += `<li>\( {p.name || 'Unnamed'} (ID: \){p.id})</li>`;
+            root.innerHTML += `<li>\( {p.name || 'Unnamed'} (ID: \){p.id.slice(0,8)}...)</li>`;
         });
         root.innerHTML += '</ul>';
     }
