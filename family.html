@@ -19,15 +19,21 @@
 </style>
 </head>
 <body>
-
 <h2>Family Tree</h2>
+
+<!-- Controls -->
+<div style="margin-bottom: 20px;">
+    <button id="toggleTheme">Toggle Day/Night</button>
+    <button id="adminPage">Admin Page</button>
+</div>
+
 <div class="tree" id="familyTree"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// Firebase setup
+// Firebase
 const app = initializeApp({
   apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
   projectId: "family-tree-aec4a"
@@ -36,83 +42,94 @@ const db = getFirestore(app);
 
 let people = [];
 
-// Get children of a person
-function getChildren(parentId) {
-  return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
-}
-
-// Create tree recursively
-function createPersonTree(person) {
-  const container = document.createElement('div');
-  container.style.display = 'flex';
-  container.style.flexDirection = 'column';
-  container.style.alignItems = 'center';
-  container.style.position = 'relative';
-
-  // Person + spouse
-  const spouseDiv = document.createElement('div');
-  spouseDiv.className = 'spouse';
-  const selfDiv = document.createElement('div');
-  selfDiv.className = 'person';
-  selfDiv.textContent = person.name || '—';
-  spouseDiv.appendChild(selfDiv);
-
-  if (person.spouseId) {
-    const spouse = people.find(x => x.id === person.spouseId);
-    if (spouse) {
-      const sDiv = document.createElement('div');
-      sDiv.className = 'person';
-      sDiv.textContent = spouse.name || '—';
-      spouseDiv.appendChild(sDiv);
+// Day/Night mode
+let darkMode = false;
+document.getElementById('toggleTheme').onclick = () => {
+    darkMode = !darkMode;
+    if (darkMode) {
+        document.body.style.background = '#333';
+        document.body.style.color = '#f4f1ea';
+    } else {
+        document.body.style.background = '#f4f1ea';
+        document.body.style.color = '#333';
     }
-  }
-  container.appendChild(spouseDiv);
+};
 
-  // Children
-  const children = getChildren(person.id);
-  if (children.length) {
-    // Vertical line from parents to horizontal connector
-    const lineDown = document.createElement('div');
-    lineDown.className = 'line-down';
-    lineDown.style.height = '20px';
-    lineDown.style.left = '50%';
-    spouseDiv.appendChild(lineDown);
+// Admin page button
+document.getElementById('adminPage').onclick = () => {
+    window.location.href = 'family-admin.html'; // replace with your admin page path
+};
 
-    const childrenContainer = document.createElement('div');
-    childrenContainer.className = 'children';
-
-    // Horizontal line connecting all children
-    const hLine = document.createElement('div');
-    hLine.className = 'line-horizontal';
-    hLine.style.width = `${children.length * 100}px`;
-    hLine.style.height = '2px';
-    hLine.style.top = '0';
-    childrenContainer.appendChild(hLine);
-
-    children.forEach(child => {
-      const childTree = createPersonTree(child);
-      childTree.style.margin = '0 20px';
-      childrenContainer.appendChild(childTree);
-    });
-
-    container.appendChild(childrenContainer);
-  }
-
-  return container;
+// --- TREE LOGIC (same as before) ---
+function getChildren(parentId) {
+    return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
 }
 
-// Build full tree from roots (no parents)
+function createPersonTree(person) {
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.alignItems = 'center';
+    container.style.position = 'relative';
+
+    const spouseDiv = document.createElement('div');
+    spouseDiv.className = 'spouse';
+    const selfDiv = document.createElement('div');
+    selfDiv.className = 'person';
+    selfDiv.textContent = person.name || '—';
+    spouseDiv.appendChild(selfDiv);
+
+    if (person.spouseId) {
+        const spouse = people.find(x => x.id === person.spouseId);
+        if (spouse) {
+            const sDiv = document.createElement('div');
+            sDiv.className = 'person';
+            sDiv.textContent = spouse.name || '—';
+            spouseDiv.appendChild(sDiv);
+        }
+    }
+    container.appendChild(spouseDiv);
+
+    const children = getChildren(person.id);
+    if (children.length) {
+        const lineDown = document.createElement('div');
+        lineDown.className = 'line-down';
+        lineDown.style.height = '20px';
+        lineDown.style.left = '50%';
+        spouseDiv.appendChild(lineDown);
+
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'children';
+
+        const hLine = document.createElement('div');
+        hLine.className = 'line-horizontal';
+        hLine.style.width = `${children.length * 100}px`;
+        hLine.style.height = '2px';
+        hLine.style.top = '0';
+        childrenContainer.appendChild(hLine);
+
+        children.forEach(child => {
+            const childTree = createPersonTree(child);
+            childTree.style.margin = '0 20px';
+            childrenContainer.appendChild(childTree);
+        });
+
+        container.appendChild(childrenContainer);
+    }
+
+    return container;
+}
+
 function buildTree() {
-  const tree = document.getElementById('familyTree');
-  tree.innerHTML = '';
-  const roots = people.filter(p => !p.motherId && !p.fatherId);
-  roots.forEach(root => tree.appendChild(createPersonTree(root)));
+    const tree = document.getElementById('familyTree');
+    tree.innerHTML = '';
+    const roots = people.filter(p => !p.motherId && !p.fatherId);
+    roots.forEach(root => tree.appendChild(createPersonTree(root)));
 }
 
-// Firebase real-time updates
 onSnapshot(collection(db, "family"), snap => {
-  people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  buildTree();
+    people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    buildTree();
 });
 </script>
 </body>
