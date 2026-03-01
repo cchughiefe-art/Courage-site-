@@ -129,190 +129,208 @@
         <tbody id="list"></tbody>
     </table>
 </div>
-
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    const db = getFirestore(initializeApp({
-        apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
-        projectId: "family-tree-aec4a"
-    }));
+// Initialize Firebase
+const app = initializeApp({
+    apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+    projectId: "family-tree-aec4a"
+});
+const db = getFirestore(app);
 
-    let editingId = null;
-    let previousSpouseId = null; // to clear old mutual link on change
-    let cropper = null;
-    let currentPhoto = null;
+// Global variables
+let people = [];
+let editingId = null;
+let cropper = null;
+let currentPhoto = null;
 
-    onSnapshot(collection(db, "family"), snap => {
-        const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const populate = (selId, gender = null) => {
-            const sel = document.getElementById(selId);
-            sel.innerHTML = '<option value="">— none —</option>';
-            people.forEach(p => {
-                if (!gender || p.gender === gender) {
-                    sel.innerHTML += `<option value="\( {p.id}"> \){p.name || 'Unnamed'}</option>`;
-                }
-            });
-        };
-
-        populate('mother', 'female');
-        populate('father', 'male');
-        populate('spouse');
-
-        const tbody = document.getElementById('list');
-        tbody.innerHTML = '';
-        people.forEach(p => {
-            const m = people.find(x => x.id === p.motherId)?.name || '—';
-            const f = people.find(x => x.id === p.fatherId)?.name || '—';
-            const s = people.find(x => x.id === p.spouseId || x.spouseId === p.id)?.name || '—';
-            tbody.innerHTML += `
-                <tr>
-                    <td>${p.name || '—'}</td>
-                    <td>${m}</td>
-                    <td>${f}</td>
-                    <td>${s}</td>
-                    <td>
-                        <button onclick="startEdit('${p.id}')">Edit</button>
-                        <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
-                    </td>
-                </tr>`;
-        });
+// Populate dropdown helper
+const populate = (selId, gender = null) => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— none —</option>';
+    people.forEach(p => {
+        if (!gender || p.gender === gender) {
+            sel.innerHTML += `<option value="${p.id}">${p.name || 'Unnamed'}</option>`;
+        }
     });
+};
 
-    document.getElementById('pic').onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-            document.getElementById('cropImg').src = ev.target.result;
-            document.getElementById('cropZone').style.display = 'block';
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(document.getElementById('cropImg'), { aspectRatio: 1, viewMode: 2 });
-        };
-        reader.readAsDataURL(file);
-    };
+// Listen for real-time updates
+onSnapshot(collection(db, "family"), snap => {
+    people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    window.startEdit = id => {
-        editingId = id;
-        document.getElementById('formTitle').textContent = "Edit Family Member";
-        document.getElementById('saveBtn').textContent = "Save Changes";
-        document.getElementById('cancelEdit').style.display = 'inline-block';
+    populate('mother', 'female');
+    populate('father', 'male');
+    populate('spouse');
 
-        // Simplified - in production use getDoc or global people
-        const p = {}; // replace with real lookup
-        document.getElementById('name').value = p.name || '';
-        document.getElementById('gender').value = p.gender || '';
-        document.getElementById('dob').value = p.dob || '';
-        document.getElementById('isDeceased').checked = !!p.isDeceased;
-        document.getElementById('dod').value = p.dod || '';
-        document.getElementById('bio').value = p.bio || '';
-        document.getElementById('mother').value = p.motherId || '';
-        document.getElementById('father').value = p.fatherId || '';
-        document.getElementById('spouse').value = p.spouseId || '';
+    // Populate table
+    const tbody = document.getElementById('list');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    people.forEach(p => {
+        const m = people.find(x => x.id === p.motherId)?.name || '—';
+        const f = people.find(x => x.id === p.fatherId)?.name || '—';
+        const s = people.find(x => x.id === p.spouseId || x.spouseId === p.id)?.name || '—';
+        tbody.innerHTML += `
+            <tr>
+                <td>${p.name || '—'}</td>
+                <td>${m}</td>
+                <td>${f}</td>
+                <td>${s}</td>
+                <td>
+                    <button onclick="startEdit('${p.id}')">Edit</button>
+                    <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
+                </td>
+            </tr>`;
+    });
+});
 
-        previousSpouseId = p.spouseId || null; // remember old spouse to clear mutual link if changed
-
-        currentPhoto = p.photo || null;
-        document.getElementById('currentPhoto').src = currentPhoto || '';
-        document.getElementById('currentPhoto').style.display = currentPhoto ? 'block' : 'none';
-    };
-
-    document.getElementById('cancelEdit').onclick = () => {
-        editingId = null;
-        previousSpouseId = null;
-        document.getElementById('formTitle').textContent = "Add New Family Member";
-        document.getElementById('saveBtn').textContent = "Add Person";
-        document.getElementById('cancelEdit').style.display = 'none';
-        document.querySelectorAll('input:not([type="checkbox"]), select, textarea').forEach(el => el.value = '');
-        document.getElementById('isDeceased').checked = false;
-        document.getElementById('cropZone').style.display = 'none';
-        document.getElementById('currentPhoto').style.display = 'none';
+// Cropper for photo upload
+document.getElementById('pic').onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const cropZone = document.getElementById('cropZone');
+        const cropImg = document.getElementById('cropImg');
+        cropImg.src = ev.target.result;
+        cropZone.style.display = 'block';
         if (cropper) cropper.destroy();
+        cropper = new Cropper(cropImg, { aspectRatio: 1, viewMode: 2 });
+    };
+    reader.readAsDataURL(file);
+};
+
+// Remove photo button
+document.getElementById('removePhoto')?.addEventListener('click', () => {
+    currentPhoto = null;
+    document.getElementById('currentPhoto').style.display = 'none';
+    if (cropper) cropper.destroy();
+    document.getElementById('cropZone').style.display = 'none';
+});
+
+// Edit a person
+window.startEdit = id => {
+    editingId = id;
+    document.getElementById('formTitle').textContent = "Edit Family Member";
+    document.getElementById('saveBtn').textContent = "Save Changes";
+    document.getElementById('cancelEdit').style.display = 'inline-block';
+
+    const p = people.find(person => person.id === id);
+    if (!p) return;
+
+    document.getElementById('name').value = p.name || '';
+    document.getElementById('gender').value = p.gender || '';
+    document.getElementById('dob').value = p.dob || '';
+    document.getElementById('isDeceased').checked = !!p.isDeceased;
+    document.getElementById('dod').value = p.dod || '';
+    document.getElementById('bio').value = p.bio || '';
+    document.getElementById('mother').value = p.motherId || '';
+    document.getElementById('father').value = p.fatherId || '';
+    document.getElementById('spouse').value = p.spouseId || '';
+
+    currentPhoto = p.photo || null;
+    const currentImg = document.getElementById('currentPhoto');
+    currentImg.src = currentPhoto || '';
+    currentImg.style.display = currentPhoto ? 'block' : 'none';
+
+    document.getElementById('cropZone').style.display = 'none';
+    if (cropper) cropper.destroy();
+};
+
+// Cancel editing
+document.getElementById('cancelEdit').onclick = () => {
+    editingId = null;
+    document.getElementById('formTitle').textContent = "Add New Family Member";
+    document.getElementById('saveBtn').textContent = "Add Person";
+    document.getElementById('cancelEdit').style.display = 'none';
+
+    document.querySelectorAll('input:not([type="checkbox"]), select, textarea')
+        .forEach(el => el.value = '');
+    document.getElementById('isDeceased').checked = false;
+    document.getElementById('cropZone').style.display = 'none';
+    document.getElementById('currentPhoto').style.display = 'none';
+    if (cropper) cropper.destroy();
+};
+
+// Save new or edited person
+document.getElementById('saveBtn').onclick = async () => {
+    const name = document.getElementById('name').value.trim();
+    if (!name) {
+        alert("Please enter a name");
+        return;
+    }
+
+    // Basic validation
+    const dob = document.getElementById('dob').value;
+    if (dob && isNaN(Date.parse(dob))) {
+        alert("Date of birth is invalid");
+        return;
+    }
+    const motherId = document.getElementById('mother').value || null;
+    const fatherId = document.getElementById('father').value || null;
+    const spouseId = document.getElementById('spouse').value || null;
+    if (editingId && (motherId === editingId || fatherId === editingId || spouseId === editingId)) {
+        alert("Cannot assign self as parent or spouse");
+        return;
+    }
+
+    const data = {
+        name,
+        gender: document.getElementById('gender').value || null,
+        dob: dob || null,
+        isDeceased: document.getElementById('isDeceased').checked,
+        dod: document.getElementById('dod').value || null,
+        bio: document.getElementById('bio').value.trim() || null,
+        motherId,
+        fatherId,
+        spouseId
     };
 
-    document.getElementById('saveBtn').onclick = async () => {
-        const name = document.getElementById('name').value.trim();
-        if (!name) {
-            alert("Please enter a name");
-            return;
-        }
+    if (cropper) {
+        data.photo = cropper.getCroppedCanvas({ width: 300 }).toDataURL('image/jpeg', 0.8);
+    } else if (currentPhoto && editingId) {
+        data.photo = currentPhoto;
+    }
 
-        const data = {
-            name,
-            gender: document.getElementById('gender').value || null,
-            dob: document.getElementById('dob').value || null,
-            isDeceased: document.getElementById('isDeceased').checked,
-            dod: document.getElementById('dod').value || null,
-            bio: document.getElementById('bio').value.trim() || null,
-            motherId: document.getElementById('mother').value || null,
-            fatherId: document.getElementById('father').value || null,
-            spouseId: document.getElementById('spouse').value || null
-        };
-
-        if (cropper) {
-            data.photo = cropper.getCroppedCanvas({width: 300}).toDataURL('image/jpeg', 0.8);
-        } else if (currentPhoto && editingId) {
-            data.photo = currentPhoto;
-        }
-
-        try {
-            let newId = editingId;
-
-            if (editingId) {
-                await updateDoc(doc(db, "family", editingId), data);
-                alert("Updated!");
-            } else {
-                const docRef = await addDoc(collection(db, "family"), data);
-                newId = docRef.id;
-                alert("Added!");
+    try {
+        if (editingId) {
+            await updateDoc(doc(db, "family", editingId), data);
+            // Sync spouse if assigned
+            if (spouseId) {
+                await updateDoc(doc(db, "family", spouseId), { spouseId: editingId });
             }
-
-            // Mutual spouse linking logic
-            const newSpouseId = data.spouseId;
-
-            // Clear old mutual link if spouse changed
-            if (previousSpouseId && previousSpouseId !== newSpouseId) {
-                await updateDoc(doc(db, "family", previousSpouseId), { spouseId: null });
+            alert("Updated!");
+        } else {
+            const docRef = await addDoc(collection(db, "family"), data);
+            if (spouseId) {
+                await updateDoc(doc(db, "family", spouseId), { spouseId: docRef.id });
             }
-
-            // Set mutual link if new spouse selected
-            if (newSpouseId) {
-                await updateDoc(doc(db, "family", newSpouseId), { spouseId: newId || editingId });
-            }
-
-            document.getElementById('cancelEdit').click();
-            previousSpouseId = null;
-        } catch (e) {
-            alert("Error saving: " + e.message);
+            alert("Added!");
         }
-    };
+        document.getElementById('cancelEdit').click();
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+};
 
-    window.deletePerson = async id => {
-        if (!confirm("Delete this person?")) return;
+// Delete a person
+window.deletePerson = async id => {
+    if (!confirm("Delete this person?")) return;
+    await deleteDoc(doc(db, "family", id));
+};
 
-        // Clear mutual spouse link before deleting
-        const personSnap = await getDoc(doc(db, "family", id));
-        const person = personSnap.data();
-        if (person && person.spouseId) {
-            await updateDoc(doc(db, "family", person.spouseId), { spouseId: null });
-        }
-
-        await deleteDoc(doc(db, "family", id));
-    };
-
-    window.wipeAll = async () => {
-        if (!confirm("Erase the entire family tree?")) return;
-        if (!confirm("Last chance — really delete everything?")) return;
-        try {
-            const snap = await getDocs(collection(db, "family"));
-            await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
-            alert("All data wiped.");
-        } catch (e) {
-            alert("Wipe failed: " + e.message);
-        }
-    };
+// Wipe all family data
+window.wipeAll = async () => {
+    if (!confirm("Erase the entire family tree?")) return;
+    if (!confirm("Last chance — really delete everything?")) return;
+    const snap = await getDocs(collection(db, "family"));
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+    alert("All data wiped.");
+};
 </script>
 </body>
 </html>
