@@ -2,238 +2,212 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>My Family Tree</title>
+<title>Family Tree - Courage's Site</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
-body {
-    font-family: 'Crimson Text', serif;
-    background: #f4f1ea;
-    margin: 0;
-    padding: 20px;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.tree {
+  body { 
+    font-family: 'Crimson Text', serif; 
+    background: #f4f1ea; 
+    padding: 20px; 
+    color: #333; 
+    transition: background 0.3s, color 0.3s; 
+  }
+  .tree { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+  }
+  .person { 
+    border: 1px solid #333; 
+    border-radius: 8px; 
+    padding: 10px 15px; 
+    min-width: 100px; 
+    text-align: center; 
+    background: #fff; 
+    position: relative; 
+    font-weight: bold;
     display: flex;
-    justify-content: center;
-    overflow-x: auto;
-}
-
-.tree ul {
-    padding-top: 20px;
-    position: relative;
-    display: flex;
-    justify-content: center;
-}
-
-.tree li {
-    list-style-type: none;
-    text-align: center;
-    position: relative;
-    padding: 20px 10px 0 10px;
-}
-
-/* Connector Lines */
-.tree li::before,
-.tree li::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 50%;
-    border-top: 2px solid #ccc;
-    width: 50%;
-    height: 20px;
-}
-
-.tree li::after {
-    right: auto;
-    left: 50%;
-    border-left: 2px solid #ccc;
-}
-
-.tree li:only-child::before,
-.tree li:only-child::after {
-    display: none;
-}
-
-.tree li:first-child::before,
-.tree li:last-child::after {
-    border: 0 none;
-}
-
-.tree li:last-child::before {
-    border-right: 2px solid #ccc;
-}
-
-.person-wrapper {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-/* Person Card */
-.person {
-    background: white;
-    border-radius: 16px;
-    padding: 14px;
-    min-width: 150px;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.08);
-    border: 2px solid #e0e0e0;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.person:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 14px 30px rgba(0,0,0,0.15);
-}
-
-.person img {
-    width: 80px;
-    height: 80px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .person img {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
+    margin-bottom: 5px;
     object-fit: cover;
-    margin-bottom: 10px;
-}
-
-.person-name {
-    font-weight: 700;
-    font-size: 17px;
-}
-
-.person-info {
-    font-size: 13px;
-    color: #555;
-}
-
-/* Gender Colors */
-.male {
-    border-color: #4a90e2;
-}
-
-.female {
-    border-color: #e26ab6;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .person {
-        min-width: 120px;
-        padding: 10px;
-    }
-
-    .person img {
-        width: 65px;
-        height: 65px;
-    }
-}
+  }
+  .spouse { 
+    display: flex; 
+    gap: 10px; 
+    position: relative; 
+    margin-bottom: 20px;
+  }
+  .children { 
+    display: flex; 
+    justify-content: center; 
+    position: relative; 
+    margin-top: 20px; 
+  }
+  .line-down { 
+    position: absolute; 
+    width: 2px; 
+    background: #333; 
+    top: 100%; 
+    left: 50%;
+  }
+  .line-horizontal { 
+    position: absolute; 
+    height: 2px; 
+    background: #333; 
+    top: 0; 
+    left: 0; 
+  }
+  button { 
+    margin-right: 10px; 
+    padding: 5px 10px; 
+    border: none; 
+    border-radius: 3px; 
+    cursor: pointer; 
+  }
+  #controls { margin-bottom: 20px; }
 </style>
 </head>
-
 <body>
 
-<h1>Family Tree</h1>
-<div id="tree" class="tree"></div>
+<h2>Family Tree</h2>
+
+<div id="controls">
+    <button id="toggleTheme">Toggle Day/Night</button>
+    <button id="adminPage">Admin Page</button>
+</div>
+
+<div class="tree" id="familyTree"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+// --- Firebase Initialization ---
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID"
+    apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+    projectId: "family-tree-aec4a"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-function buildTree(personId, peopleMap, renderedSpouses = new Set()) {
+// --- Global variables ---
+let people = [];
 
-    const person = peopleMap[personId];
-    if (!person) return '';
+// --- Day/Night toggle ---
+let darkMode = false;
+document.getElementById('toggleTheme').addEventListener('click', () => {
+    darkMode = !darkMode;
+    document.body.style.background = darkMode ? '#333' : '#f4f1ea';
+    document.body.style.color = darkMode ? '#f4f1ea' : '#333';
+});
 
-    const children = Object.values(peopleMap).filter(p =>
-        p.motherId === personId || p.fatherId === personId
-    );
+// --- Admin page button ---
+document.getElementById('adminPage').addEventListener('click', () => {
+    window.location.href = 'add-family.html';
+});
 
-    let spouseHTML = '';
-    if (person.spouseId && peopleMap[person.spouseId] && !renderedSpouses.has(person.spouseId)) {
+// --- Helper: find children ---
+function getChildren(parentId) {
+    return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
+}
 
-        const spouse = peopleMap[person.spouseId];
-        renderedSpouses.add(spouse.id);
+// --- Create person tree recursively ---
+function createPersonTree(person, drawn = new Set()) {
+    // Prevent duplicates if spouse has already been drawn
+    if (drawn.has(person.id)) return null;
+    drawn.add(person.id);
 
-        spouseHTML = `
-            <div class="person ${spouse.gender === 'Male' ? 'male' : 'female'}">
-                <img src="${spouse.photo || 'https://via.placeholder.com/80'}">
-                <div class="person-name">${spouse.name || ''}</div>
-                <div class="person-info">
-                    ${spouse.dob || ''} 
-                    ${spouse.isDeceased ? ' - ' + (spouse.dod || '') : ''}
-                </div>
-            </div>
-        `;
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.alignItems = 'center';
+    container.style.position = 'relative';
+
+    // Person + spouse
+    const spouseDiv = document.createElement('div');
+    spouseDiv.className = 'spouse';
+
+    const selfDiv = document.createElement('div');
+    selfDiv.className = 'person';
+    const img = document.createElement('img');
+    img.src = person.photo || 'https://via.placeholder.com/60'; // placeholder
+    selfDiv.appendChild(img);
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = person.name || '—';
+    selfDiv.appendChild(nameSpan);
+    spouseDiv.appendChild(selfDiv);
+
+    if (person.spouseId) {
+        const spouse = people.find(x => x.id === person.spouseId);
+        if (spouse && !drawn.has(spouse.id)) {
+            drawn.add(spouse.id);
+            const sDiv = document.createElement('div');
+            sDiv.className = 'person';
+            const sImg = document.createElement('img');
+            sImg.src = spouse.photo || 'https://via.placeholder.com/60';
+            sDiv.appendChild(sImg);
+            const sName = document.createElement('span');
+            sName.textContent = spouse.name || '—';
+            sDiv.appendChild(sName);
+            spouseDiv.appendChild(sDiv);
+        }
     }
 
-    let html = `
-        <li>
-            <div class="person-wrapper">
-                <div class="person ${person.gender === 'Male' ? 'male' : 'female'}">
-                    <img src="${person.photo || 'https://via.placeholder.com/80'}">
-                    <div class="person-name">${person.name || ''}</div>
-                    <div class="person-info">
-                        ${person.dob || ''} 
-                        ${person.isDeceased ? ' - ' + (person.dod || '') : ''}
-                    </div>
-                </div>
-                ${spouseHTML}
-            </div>
-    `;
+    container.appendChild(spouseDiv);
 
-    if (children.length > 0) {
-        html += `<ul>`;
+    // Children
+    const children = getChildren(person.id);
+    if (children.length) {
+        const lineDown = document.createElement('div');
+        lineDown.className = 'line-down';
+        lineDown.style.height = '20px';
+        spouseDiv.appendChild(lineDown);
+
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'children';
+
+        const hLine = document.createElement('div');
+        hLine.className = 'line-horizontal';
+        hLine.style.width = `${children.length * 120}px`;
+        childrenContainer.appendChild(hLine);
+
         children.forEach(child => {
-            html += buildTree(child.id, peopleMap, renderedSpouses);
+            const childTree = createPersonTree(child, drawn);
+            if (childTree) {
+                childTree.style.margin = '0 10px';
+                childrenContainer.appendChild(childTree);
+            }
         });
-        html += `</ul>`;
+
+        container.appendChild(childrenContainer);
     }
 
-    html += `</li>`;
-    return html;
+    return container;
 }
 
-async function loadTree() {
-
-    const snapshot = await getDocs(collection(db, "family"));
-    const peopleMap = {};
-
-    snapshot.forEach(doc => {
-        peopleMap[doc.id] = { id: doc.id, ...doc.data() };
+// --- Build tree ---
+function buildTree() {
+    const tree = document.getElementById('familyTree');
+    tree.innerHTML = '';
+    const drawn = new Set();
+    const roots = people.filter(p => !p.motherId && !p.fatherId);
+    roots.forEach(root => {
+        const treeNode = createPersonTree(root, drawn);
+        if (treeNode) tree.appendChild(treeNode);
     });
-
-    if (Object.keys(peopleMap).length === 0) {
-        document.getElementById('tree').innerHTML = "<p>No family members added yet.</p>";
-        return;
-    }
-
-    const root = Object.values(peopleMap).find(p =>
-        !p.motherId && !p.fatherId
-    );
-
-    if (!root) {
-        document.getElementById('tree').innerHTML = "<p>No root ancestor found.</p>";
-        return;
-    }
-
-    document.getElementById('tree').innerHTML =
-        `<ul>${buildTree(root.id, peopleMap)}</ul>`;
 }
 
-loadTree();
+// --- Real-time Firebase updates ---
+onSnapshot(collection(db, "family"), snap => {
+    people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    buildTree();
+});
 </script>
 
 </body>
