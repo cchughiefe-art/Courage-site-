@@ -189,7 +189,8 @@
         document.getElementById('saveBtn').textContent = "Save Changes";
         document.getElementById('cancelEdit').style.display = 'inline-block';
 
-        const p = {}; // in production use getDoc(doc(db, "family", id)).then(s => { ... })
+        // In real app use getDoc - here we use snapshot data
+        const p = {}; // replace with getDoc logic if needed
         document.getElementById('name').value = p.name || '';
         document.getElementById('gender').value = p.gender || '';
         document.getElementById('dob').value = p.dob || '';
