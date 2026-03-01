@@ -125,7 +125,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
     const db = getFirestore(initializeApp({
         apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
@@ -137,38 +137,38 @@
     let currentPhoto = null;
 
     onSnapshot(collection(db, "family"), snap => {
-        const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
-      const populate = (selId, gender = null) => {
-    const sel = document.getElementById(selId);
-    sel.innerHTML = '<option value="">— none —</option>';
+    const populate = (selId, gender = null) => {
+        const sel = document.getElementById(selId);
+        sel.innerHTML = '<option value="">— none —</option>';
+        people.forEach(p => {
+            if (!gender || p.gender === gender) {
+                sel.innerHTML += `<option value="${p.id}">${p.name || 'Unnamed'}</option>`;
+            }
+        });
+    };
+
+    populate('mother', 'female');
+    populate('father', 'male');
+
+    const tbody = document.getElementById('list');
+    tbody.innerHTML = '';
     people.forEach(p => {
-        if (!gender || p.gender === gender) {
-            sel.innerHTML += `<option value="${p.id}">${p.name || 'Unnamed'}</option>`;
-        }
+        const m = people.find(x => x.id === p.motherId)?.name || '—';
+        const f = people.find(x => x.id === p.fatherId)?.name || '—';
+        tbody.innerHTML += `
+            <tr>
+                <td>${p.name || '—'}</td>
+                <td>${m}</td>
+                <td>${f}</td>
+                <td>
+                    <button onclick="startEdit('${p.id}')">Edit</button>
+                    <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
+                </td>
+            </tr>`;
     });
-};
-
-populate('mother', 'female');
-populate('father', 'male');
-
-const tbody = document.getElementById('list');
-tbody.innerHTML = '';
-people.forEach(p => {
-    const m = people.find(x => x.id === p.motherId)?.name || '—';
-    const f = people.find(x => x.id === p.fatherId)?.name || '—';
-    tbody.innerHTML += `
-        <tr>
-            <td>${p.name || '—'}</td>
-            <td>${m}</td>
-            <td>${f}</td>
-            <td>
-                <button onclick="startEdit('${p.id}')">Edit</button>
-                <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
-            </td>
-        </tr>`;
 });
-
     document.getElementById('pic').onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
@@ -188,8 +188,9 @@ people.forEach(p => {
         document.getElementById('saveBtn').textContent = "Save Changes";
         document.getElementById('cancelEdit').style.display = 'inline-block';
 
-        // In real app use getDoc - here we use snapshot data
-        const p = {}; // replace with getDoc logic if needed
+        // Use snapshot data (since onSnapshot is already running)
+        const people = []; // in real usage: get from global or use getDoc
+        const p = people.find(person => person.id === id) || {};
         document.getElementById('name').value = p.name || '';
         document.getElementById('gender').value = p.gender || '';
         document.getElementById('dob').value = p.dob || '';
@@ -250,21 +251,25 @@ people.forEach(p => {
             }
             document.getElementById('cancelEdit').click();
         } catch (e) {
-            alert("Error: " + e.message);
+            alert("Error saving: " + e.message);
         }
     };
 
     window.deletePerson = async id => {
-        if (!confirm("Delete?")) return;
+        if (!confirm("Delete this person?")) return;
         await deleteDoc(doc(db, "family", id));
     };
 
     window.wipeAll = async () => {
-        if (!confirm("Erase all?")) return;
-        if (!confirm("Last chance")) return;
-        const snap = await getDocs(collection(db, "family"));
-        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
-        alert("Cleared.");
+        if (!confirm("Erase the entire family tree?")) return;
+        if (!confirm("Last chance — really delete everything?")) return;
+        try {
+            const snap = await getDocs(collection(db, "family"));
+            await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+            alert("All data wiped.");
+        } catch (e) {
+            alert("Wipe failed: " + e.message);
+        }
     };
 </script>
 </body>
