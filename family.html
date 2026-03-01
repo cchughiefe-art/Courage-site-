@@ -5,20 +5,18 @@
 <title>Family Tree</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  body { font-family: 'Crimson Text', serif; background: #f4f1ea; padding: 20px; }
+  body { font-family: 'Crimson Text', serif; background: #f4f1ea; padding: 20px; color: #333; transition: background 0.3s, color 0.3s; }
   .tree { display: flex; flex-direction: column; align-items: center; }
   .spouse { display: flex; gap: 10px; position: relative; }
   .person { border: 1px solid #333; border-radius: 5px; padding: 10px 15px; min-width: 80px; text-align: center; background: #fff; position: relative; }
-  
   .children { display: flex; justify-content: center; position: relative; margin-top: 20px; }
-  
-  /* Vertical line from parent to children */
   .line-down { position: absolute; width: 2px; background: #333; top: 100%; }
-  /* Horizontal line connecting children */
   .line-horizontal { position: absolute; height: 2px; background: #333; top: 0; left: 0; right: 0; }
+  button { margin-right: 10px; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
 </style>
 </head>
 <body>
+
 <h2>Family Tree</h2>
 
 <!-- Controls -->
@@ -42,7 +40,7 @@ const db = getFirestore(app);
 
 let people = [];
 
-// Day/Night mode
+// Day/Night toggle
 let darkMode = false;
 document.getElementById('toggleTheme').onclick = () => {
     darkMode = !darkMode;
@@ -55,16 +53,17 @@ document.getElementById('toggleTheme').onclick = () => {
     }
 };
 
-// Admin page button
+// Admin page button goes to Add/Edit page
 document.getElementById('adminPage').onclick = () => {
-    window.location.href = 'family-admin.html'; // replace with your admin page path
+    window.location.href = 'family-admin.html'; // your add/edit page
 };
 
-// --- TREE LOGIC (same as before) ---
+// Helper: find children
 function getChildren(parentId) {
     return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
 }
 
+// Recursive tree creation
 function createPersonTree(person) {
     const container = document.createElement('div');
     container.style.display = 'flex';
@@ -72,6 +71,7 @@ function createPersonTree(person) {
     container.style.alignItems = 'center';
     container.style.position = 'relative';
 
+    // Person + spouse
     const spouseDiv = document.createElement('div');
     spouseDiv.className = 'spouse';
     const selfDiv = document.createElement('div');
@@ -90,8 +90,10 @@ function createPersonTree(person) {
     }
     container.appendChild(spouseDiv);
 
+    // Children
     const children = getChildren(person.id);
     if (children.length) {
+        // Vertical line
         const lineDown = document.createElement('div');
         lineDown.className = 'line-down';
         lineDown.style.height = '20px';
@@ -101,11 +103,10 @@ function createPersonTree(person) {
         const childrenContainer = document.createElement('div');
         childrenContainer.className = 'children';
 
+        // Horizontal line connecting children
         const hLine = document.createElement('div');
         hLine.className = 'line-horizontal';
         hLine.style.width = `${children.length * 100}px`;
-        hLine.style.height = '2px';
-        hLine.style.top = '0';
         childrenContainer.appendChild(hLine);
 
         children.forEach(child => {
@@ -120,6 +121,7 @@ function createPersonTree(person) {
     return container;
 }
 
+// Build tree from roots
 function buildTree() {
     const tree = document.getElementById('familyTree');
     tree.innerHTML = '';
@@ -127,10 +129,11 @@ function buildTree() {
     roots.forEach(root => tree.appendChild(createPersonTree(root)));
 }
 
+// Firebase real-time updates
 onSnapshot(collection(db, "family"), snap => {
     people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     buildTree();
 });
 </script>
+
 </body>
-</html>
