@@ -11,7 +11,7 @@
   .person { border: 1px solid #333; border-radius: 5px; padding: 10px 15px; min-width: 80px; text-align: center; background: #fff; position: relative; }
   .children { display: flex; justify-content: center; position: relative; margin-top: 20px; }
   .line-down { position: absolute; width: 2px; background: #333; top: 100%; }
-  .line-horizontal { position: absolute; height: 2px; background: #333; top: 0; left: 0; right: 0; }
+  .line-horizontal { position: absolute; height: 2px; background: #333; top: 0; left: 0; }
   button { margin-right: 10px; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
 </style>
 </head>
@@ -31,7 +31,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// Firebase
+// Firebase setup
 const app = initializeApp({
   apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
   projectId: "family-tree-aec4a"
@@ -42,23 +42,18 @@ let people = [];
 
 // Day/Night toggle
 let darkMode = false;
-document.getElementById('toggleTheme').onclick = () => {
+document.getElementById('toggleTheme').addEventListener('click', () => {
     darkMode = !darkMode;
-    if (darkMode) {
-        document.body.style.background = '#333';
-        document.body.style.color = '#f4f1ea';
-    } else {
-        document.body.style.background = '#f4f1ea';
-        document.body.style.color = '#333';
-    }
-};
+    document.body.style.background = darkMode ? '#333' : '#f4f1ea';
+    document.body.style.color = darkMode ? '#f4f1ea' : '#333';
+});
 
-// Admin page button goes to Add/Edit page
-document.getElementById('adminPage').onclick = () => {
-    window.location.href = 'add-family.html'; // your add/edit page
-};
+// Admin button goes to Add/Edit form
+document.getElementById('adminPage').addEventListener('click', () => {
+    window.location.href = 'add-family.html';
+});
 
-// Helper: find children
+// Helper to find children
 function getChildren(parentId) {
     return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
 }
@@ -88,12 +83,12 @@ function createPersonTree(person) {
             spouseDiv.appendChild(sDiv);
         }
     }
+
     container.appendChild(spouseDiv);
 
     // Children
     const children = getChildren(person.id);
     if (children.length) {
-        // Vertical line
         const lineDown = document.createElement('div');
         lineDown.className = 'line-down';
         lineDown.style.height = '20px';
@@ -103,7 +98,6 @@ function createPersonTree(person) {
         const childrenContainer = document.createElement('div');
         childrenContainer.className = 'children';
 
-        // Horizontal line connecting children
         const hLine = document.createElement('div');
         hLine.className = 'line-horizontal';
         hLine.style.width = `${children.length * 100}px`;
@@ -121,7 +115,7 @@ function createPersonTree(person) {
     return container;
 }
 
-// Build tree from roots
+// Build the tree
 function buildTree() {
     const tree = document.getElementById('familyTree');
     tree.innerHTML = '';
@@ -129,7 +123,7 @@ function buildTree() {
     roots.forEach(root => tree.appendChild(createPersonTree(root)));
 }
 
-// Firebase real-time updates
+// Real-time Firebase updates
 onSnapshot(collection(db, "family"), snap => {
     people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     buildTree();
@@ -137,3 +131,4 @@ onSnapshot(collection(db, "family"), snap => {
 </script>
 
 </body>
+</html>
