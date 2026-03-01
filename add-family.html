@@ -139,36 +139,35 @@
     onSnapshot(collection(db, "family"), snap => {
         const people = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
-        const populate = (selId, gender = null) => {
-            const sel = document.getElementById(selId);
-            sel.innerHTML = '<option value="">— none —</option>';
-            people.forEach(p => {
-                if (!gender || p.gender === gender) {
-                    sel.innerHTML += `<option value="\( {p.id}"> \){p.name || 'Unnamed'}</option>`;
-                }
-            });
-        };
-
-        populate('mother', 'female');
-        populate('father', 'male');
-
-        const tbody = document.getElementById('list');
-        tbody.innerHTML = '';
-        people.forEach(p => {
-            const m = people.find(x => x.id === p.motherId)?.name || '—';
-            const f = people.find(x => x.id === p.fatherId)?.name || '—';
-            tbody.innerHTML += `
-                <tr>
-                    <td>${p.name || '—'}</td>
-                    <td>${m}</td>
-                    <td>${f}</td>
-                    <td>
-                        <button onclick="startEdit('${p.id}')">Edit</button>
-                        <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
-                    </td>
-                </tr>`;
-        });
+      const populate = (selId, gender = null) => {
+    const sel = document.getElementById(selId);
+    sel.innerHTML = '<option value="">— none —</option>';
+    people.forEach(p => {
+        if (!gender || p.gender === gender) {
+            sel.innerHTML += `<option value="${p.id}">${p.name || 'Unnamed'}</option>`;
+        }
     });
+};
+
+populate('mother', 'female');
+populate('father', 'male');
+
+const tbody = document.getElementById('list');
+tbody.innerHTML = '';
+people.forEach(p => {
+    const m = people.find(x => x.id === p.motherId)?.name || '—';
+    const f = people.find(x => x.id === p.fatherId)?.name || '—';
+    tbody.innerHTML += `
+        <tr>
+            <td>${p.name || '—'}</td>
+            <td>${m}</td>
+            <td>${f}</td>
+            <td>
+                <button onclick="startEdit('${p.id}')">Edit</button>
+                <button style="background:#c62828;color:white;" onclick="deletePerson('${p.id}')">Delete</button>
+            </td>
+        </tr>`;
+});
 
     document.getElementById('pic').onchange = e => {
         const file = e.target.files[0];
