@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Courage's Blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Serif+Display:ital@0;1&family=Space+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080A0E;
+      --surface: #111318;
+      --surface2: #181B22;
+      --text: #EEF0F5;
+      --text-muted: #6B7280;
+      --text-dim: #9CA3AF;
+      --accent: #00E5CC;
+      --accent-dark: #007A6E;
+      --border: rgba(255,255,255,0.07);
+      --error: #FF6B6B;
+      --success: #00E5CC;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* Grid bg */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,204,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,204,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .glow { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; opacity: 0.06; }
+    .g1 { width:500px;height:500px;background:var(--accent);top:-150px;right:-150px; }
+    .g2 { width:300px;height:300px;background:#FF6B6B;bottom:10%;left:-100px; }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 3rem;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .card-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.2rem;
+      letter-spacing: -1px;
+      margin-bottom: 0.4rem;
+    }
+    .card-title em { color: var(--accent); font-style: italic; }
+    .card-sub {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .field { margin-bottom: 1.5rem; }
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.6rem;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      resize: vertical;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,229,204,0.1);
+    }
+    input[type="password"] { letter-spacing: 0.2em; }
+    textarea { min-height: 160px; line-height: 1.7; }
+    select option { background: var(--surface2); }
+
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      background: var(--accent);
+      color: #080A0E;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.05em;
+    }
+    .btn:hover { background: #00c4af; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,229,204,0.3); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .msg {
+      display: none;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+      font-family: 'Space Mono', monospace;
+    }
+    .msg.error { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: var(--error); display: block; }
+    .msg.success { background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.3); color: var(--success); display: block; }
+
+    /* Login vs dashboard toggle */
+    #login-view, #dashboard-view { display: none; }
+    #login-view.active, #dashboard-view.active { display: block; }
+
+    .entries-list { margin-top: 2rem; }
+    .entry-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+      gap: 1rem;
+    }
+    .entry-row-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .entry-row-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .delete-btn {
+      background: rgba(255,107,107,0.1);
+      border: 1px solid rgba(255,107,107,0.2);
+      color: var(--error);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .delete-btn:hover { background: rgba(255,107,107,0.2); }
+
+    .logout-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      transition: all 0.2s;
+      margin-bottom: 1.5rem;
+    }
+    .logout-btn:hover { border-color: var(--error); color: var(--error); }
+
+    .section-sep {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    .char-count {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+      text-align: right;
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="glow g1"></div>
+<div class="glow g2"></div>
+
+<div class="card">
+  <a href="index.html" class="back-link">← back to blog</a>
+
+  <!-- LOGIN VIEW -->
+  <div id="login-view" class="active">
+    <div class="card-title">Admin <em>Login</em></div>
+    <div class="card-sub">Enter your password to manage journal entries.</div>
+    <div id="login-msg" class="msg"></div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password-input" placeholder="••••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn" id="login-btn">Login →</button>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboard-view">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <div class="card-title">New <em>Entry</em></div>
+      <button class="logout-btn" id="logout-btn">logout</button>
+    </div>
+    <div class="card-sub">Write a new journal entry. It'll appear on your blog instantly.</div>
+
+    <div id="post-msg" class="msg"></div>
+
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="entry-title" placeholder="What's on your mind today?" maxlength="100"/>
+    </div>
+    <div class="field">
+      <label>Tag</label>
+      <select id="entry-tag">
+        <option value="Journal">Journal</option>
+        <option value="Milestone">Milestone</option>
+        <option value="Thoughts">Thoughts</option>
+        <option value="Lagos Life">Lagos Life</option>
+        <option value="Tech">Tech</option>
+        <option value="Personal">Personal</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Content</label>
+      <textarea id="entry-content" placeholder="Write your thoughts here..." maxlength="2000"></textarea>
+      <div class="char-count"><span id="char-num">0</span> / 2000</div>
+    </div>
+    <button class="btn" id="post-btn">Publish Entry →</button>
+
+    <hr class="section-sep"/>
+
+    <div style="font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--text-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;">Existing Entries</div>
+    <div id="entries-list">
+      <div style="color:var(--text-muted);font-size:0.85rem;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+    authDomain: "family-tree-aec4a.firebaseapp.com",
+    projectId: "family-tree-aec4a",
+    storageBucket: "family-tree-aec4a.firebasestorage.app",
+    messagingSenderId: "956247325424",
+    appId: "1:956247325424:web:94690decde56983ff42035"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const ADMIN_PASSWORD = "Courage123#";
+  const SESSION_KEY = "blog_admin_auth";
+
+  // Check if already logged in
+  if (sessionStorage.getItem(SESSION_KEY) === "true") showDashboard();
+
+  // Login
+  document.getElementById('login-btn').addEventListener('click', () => {
+    const pw = document.getElementById('password-input').value;
+    const msg = document.getElementById('login-msg');
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, "true");
+      msg.className = 'msg';
+      showDashboard();
+    } else {
+      msg.textContent = "❌ Wrong password. Try again.";
+      msg.className = 'msg error';
+    }
+  });
+
+  // Allow Enter key on password
+  document.getElementById('password-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    document.getElementById('dashboard-view').classList.remove('active');
+    document.getElementById('login-view').classList.add('active');
+    document.getElementById('password-input').value = '';
+  });
+
+  // Char counter
+  document.getElementById('entry-content').addEventListener('input', function() {
+    document.getElementById('char-num').textContent = this.value.length;
+  });
+
+  // Post entry
+  document.getElementById('post-btn').addEventListener('click', async () => {
+    const title = document.getElementById('entry-title').value.trim();
+    const content = document.getElementById('entry-content').value.trim();
+    const tag = document.getElementById('entry-tag').value;
+    const msg = document.getElementById('post-msg');
+    const btn = document.getElementById('post-btn');
+
+    if (!title || !content) {
+      msg.textContent = "⚠️ Please fill in both title and content.";
+      msg.className = 'msg error';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Publishing...";
+    msg.className = 'msg';
+
+    try {
+      await addDoc(collection(db, 'journal'), {
+        title, content, tag,
+        createdAt: serverTimestamp()
+      });
+      msg.textContent = "✅ Entry published! It's now live on your blog.";
+      msg.className = 'msg success';
+      document.getElementById('entry-title').value = '';
+      document.getElementById('entry-content').value = '';
+      document.getElementById('char-num').textContent = '0';
+      loadExistingEntries();
+    } catch(e) {
+      msg.textContent = "❌ Error: " + e.message;
+      msg.className = 'msg error';
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Publish Entry →";
+  });
+
+  function showDashboard() {
+    document.getElementById('login-view').classList.remove('active');
+    document.getElementById('dashboard-view').classList.add('active');
+    loadExistingEntries();
+  }
+
+  async function loadExistingEntries() {
+    const list = document.getElementById('entries-list');
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">Loading...</div>';
+    try {
+      const q = query(collection(db, 'journal'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">No entries yet.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      snap.forEach(d => {
+        const data = d.data();
+        const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('en-GB') : 'Just now';
+        const row = document.createElement('div');
+        row.className = 'entry-row';
+        row.innerHTML = `
+          <div class="entry-row-title">${data.title}</div>
+          <div class="entry-row-date">${date}</div>
+          <button class="delete-btn" data-id="${d.id}">delete</button>`;
+        list.appendChild(row);
+      });
+
+      // Delete handlers
+      list.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Delete this entry? This cannot be undone.')) return;
+          await deleteDoc(doc(db, 'journal', btn.dataset.id));
+          loadExistingEntries();
+        });
+      });
+    } catch(e) {
+      list.innerHTML = `<div style="color:var(--error);font-size:0.85rem;">Error loading entries: ${e.message}</div>`;
+    }
+  }
+</script>
+</body>
+</html>
