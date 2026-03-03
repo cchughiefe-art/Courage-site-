@@ -1,214 +1,411 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<title>Family Tree - Courage's Site</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  body { 
-    font-family: 'Crimson Text', serif; 
-    background: #f4f1ea; 
-    padding: 20px; 
-    color: #333; 
-    transition: background 0.3s, color 0.3s; 
-  }
-  .tree { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-  }
-  .person { 
-    border: 1px solid #333; 
-    border-radius: 8px; 
-    padding: 10px 15px; 
-    min-width: 100px; 
-    text-align: center; 
-    background: #fff; 
-    position: relative; 
-    font-weight: bold;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .person img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin-bottom: 5px;
-    object-fit: cover;
-  }
-  .spouse { 
-    display: flex; 
-    gap: 10px; 
-    position: relative; 
-    margin-bottom: 20px;
-  }
-  .children { 
-    display: flex; 
-    justify-content: center; 
-    position: relative; 
-    margin-top: 20px; 
-  }
-  .line-down { 
-    position: absolute; 
-    width: 2px; 
-    background: #333; 
-    top: 100%; 
-    left: 50%;
-  }
-  .line-horizontal { 
-    position: absolute; 
-    height: 2px; 
-    background: #333; 
-    top: 0; 
-    left: 0; 
-  }
-  button { 
-    margin-right: 10px; 
-    padding: 5px 10px; 
-    border: none; 
-    border-radius: 3px; 
-    cursor: pointer; 
-  }
-  #controls { margin-bottom: 20px; }
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Friends & Family — Courage's Blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Serif+Display:ital@0;1&family=Space+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#080A0E;--surface:#111318;--surface2:#181B22;--text:#EEF0F5;--text-muted:#6B7280;--text-dim:#9CA3AF;--accent:#00E5CC;--accent2:#FF6B6B;--border:rgba(255,255,255,0.07);--line:rgba(0,229,204,0.3);}
+    [data-theme="light"]{--bg:#F0F2F5;--surface:#FFFFFF;--surface2:#F5F7FA;--text:#111318;--text-muted:#6B7280;--text-dim:#4B5563;--accent:#007A6E;--accent2:#E53E3E;--border:rgba(0,0,0,0.08);--line:rgba(0,122,110,0.35);}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .4s,color .4s;}
+    body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,204,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
+    .blob{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;opacity:.06;}
+    .b1{width:500px;height:500px;background:var(--accent);top:-150px;right:-150px;}
+    .b2{width:300px;height:300px;background:var(--accent2);bottom:10%;left:-100px;}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 3rem;background:rgba(8,10,14,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:background .4s;}
+    [data-theme="light"] nav{background:rgba(240,242,245,.9);}
+    .nav-logo{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--accent);text-decoration:none;letter-spacing:-.5px;}
+    .nav-logo span{color:var(--text-muted);font-style:italic;}
+    .nav-links{display:flex;align-items:center;gap:2rem;list-style:none;}
+    .nav-links a{color:var(--text-dim);text-decoration:none;font-size:.85rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;transition:color .2s;position:relative;}
+    .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent);transition:width .3s;}
+    .nav-links a:hover,.nav-links a.active{color:var(--accent);}
+    .nav-links a:hover::after,.nav-links a.active::after{width:100%;}
+    .theme-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1rem;transition:all .3s;display:flex;align-items:center;justify-content:center;}
+    .theme-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .ham-btn{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:4px;}
+    .ham-btn span{display:block;width:24px;height:2px;background:var(--text);transition:all .3s;}
+    .ham-btn.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
+    .ham-btn.open span:nth-child(2){opacity:0;}
+    .ham-btn.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
+    .mobile-drawer{position:fixed;top:0;right:-100%;width:min(80%,320px);height:100vh;background:var(--surface);z-index:1050;padding:5rem 2.5rem 2rem;display:flex;flex-direction:column;gap:2rem;transition:right .4s cubic-bezier(.4,0,.2,1);border-left:1px solid var(--border);}
+    .mobile-drawer.open{right:0;}
+    .mobile-drawer a{color:var(--text);text-decoration:none;font-size:1.4rem;font-weight:700;letter-spacing:-.5px;transition:color .2s,transform .2s;display:block;pointer-events:all;cursor:pointer;}
+    .mobile-drawer a:hover{color:var(--accent);transform:translateX(8px);}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1040;opacity:0;pointer-events:none;transition:opacity .4s;}
+    .overlay.show{opacity:1;pointer-events:all;}
+    @media(max-width:768px){nav{padding:1.2rem 1.5rem;}.nav-links{display:none!important;}.ham-btn{display:flex!important;}}
+    @media(min-width:769px){.ham-btn{display:none!important;}.mobile-drawer,.overlay{display:none!important;}}
+
+    .page-header{position:relative;z-index:1;padding:9rem 3rem 3rem;max-width:1400px;margin:0 auto;}
+    .section-label{display:inline-block;font-family:'Space Mono',monospace;font-size:.72rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:1.2rem;opacity:.8;}
+    .page-title{font-family:'DM Serif Display',serif;font-size:clamp(2.2rem,5vw,4rem);line-height:1.1;letter-spacing:-2px;margin-bottom:.8rem;}
+    .page-title em{font-style:italic;color:var(--accent);}
+    .page-sub{color:var(--text-muted);font-size:.95rem;max-width:480px;}
+    @media(max-width:768px){.page-header{padding:7rem 1.5rem 2rem;}}
+
+    /* TREE */
+    .tree-wrap{position:relative;z-index:1;width:100%;overflow:auto;padding:2rem 1rem 8rem;min-height:500px;cursor:grab;}
+    .tree-wrap:active{cursor:grabbing;}
+    #tree-canvas{position:relative;margin:0 auto;transform-origin:top left;}
+    #tree-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
+
+    /* NODE */
+    .node{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;width:100px;transform:translateX(-50%);}
+    .node-avatar{width:70px;height:70px;border-radius:50%;border:2.5px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--text-muted);overflow:hidden;transition:border-color .3s,box-shadow .3s,transform .3s;flex-shrink:0;position:relative;}
+    .node-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+    .node:hover .node-avatar{border-color:var(--accent);box-shadow:0 0 18px rgba(0,229,204,.35);transform:scale(1.08);}
+    .node.is-self .node-avatar{border-color:var(--accent);box-shadow:0 0 22px rgba(0,229,204,.3);}
+    .node.is-spouse .node-avatar{border-color:rgba(255,107,107,.5);}
+    .node.is-deceased .node-avatar{filter:grayscale(60%);}
+    .candle{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:.85rem;}
+    .node-name{font-size:.7rem;font-weight:700;text-align:center;margin-top:.5rem;color:var(--text);line-height:1.2;max-width:95px;word-break:break-word;}
+    .node-sub{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--text-muted);text-align:center;margin-top:.1rem;}
+
+    /* POPUP */
+    .pop-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(6px);}
+    .pop-overlay.show{display:flex;}
+    .popup{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:380px;width:100%;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:popIn .25s cubic-bezier(.34,1.56,.64,1);}
+    @keyframes popIn{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:scale(1);}}
+    .pop-close{position:absolute;top:1rem;right:1rem;background:none;border:1px solid var(--border);color:var(--text-muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.9rem;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+    .pop-close:hover{border-color:var(--accent);color:var(--accent);}
+    .pop-avatar{width:90px;height:90px;border-radius:50%;border:3px solid var(--accent);margin:0 auto 1.2rem;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--text-muted);background:var(--surface2);overflow:hidden;}
+    .pop-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+    .pop-name{font-family:'DM Serif Display',serif;font-size:1.8rem;text-align:center;letter-spacing:-.5px;margin-bottom:.2rem;}
+    .pop-sub{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--text-muted);text-align:center;margin-bottom:1.2rem;}
+    .pop-row{display:flex;gap:.8rem;align-items:flex-start;margin-bottom:.6rem;}
+    .pop-lbl{font-size:.66rem;font-family:'Space Mono',monospace;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;min-width:58px;padding-top:2px;}
+    .pop-val{font-size:.86rem;color:var(--text-dim);line-height:1.5;}
+
+    .state-msg{text-align:center;padding:5rem 2rem;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:.85rem;position:relative;z-index:1;}
+    .state-msg h3{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--text);margin-bottom:.5rem;}
+  </style>
 </head>
 <body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
 
-<h2>Family Tree</h2>
-
-<div id="controls">
-    <button id="toggleTheme">Toggle Day/Night</button>
-    <button id="adminPage">Admin Page</button>
+<nav>
+  <a href="index.html" class="nav-logo">C<span>ourage</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#journal">Journal</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
+    <li><a href="family.html" class="active">Friends &amp; Family</a></li>
+    <li><button class="theme-btn" id="theme-toggle">🌙</button></li>
+  </ul>
+  <button class="ham-btn" id="ham-btn"><span></span><span></span><span></span></button>
+</nav>
+<div class="overlay" id="overlay"></div>
+<div class="mobile-drawer" id="mobile-drawer">
+  <a href="index.html" class="drawer-link">Home</a>
+  <a href="index.html#about" class="drawer-link">About</a>
+  <a href="index.html#journal" class="drawer-link">Journal</a>
+  <a href="index.html#contact" class="drawer-link">Contact</a>
+  <a href="family.html" class="drawer-link">Friends &amp; Family</a>
+  <button class="theme-btn" id="theme-toggle-mobile" style="align-self:flex-start;margin-top:1rem;">🌙</button>
 </div>
 
-<div class="tree" id="familyTree"></div>
+<div class="page-header">
+  <span class="section-label">// Family Tree</span>
+  <h1 class="page-title">The people who<br><em>shaped me</em></h1>
+  <p class="page-sub">A living map of family — roots, branches, and everyone in between.</p>
+</div>
+
+<div class="tree-wrap" id="tree-wrap">
+  <div id="tree-canvas">
+    <svg id="tree-svg"></svg>
+    <div class="state-msg" id="tree-state">Loading family tree...</div>
+  </div>
+</div>
+
+<div class="pop-overlay" id="pop-overlay">
+  <div class="popup">
+    <button class="pop-close" id="pop-close">×</button>
+    <div class="pop-avatar" id="pop-avatar">👤</div>
+    <div class="pop-name" id="pop-name"></div>
+    <div class="pop-sub" id="pop-sub"></div>
+    <div id="pop-details"></div>
+  </div>
+</div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// --- Firebase Initialization ---
-const firebaseConfig = {
-    apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
-    projectId: "family-tree-aec4a"
-};
-const app = initializeApp(firebaseConfig);
+const app = initializeApp({
+  apiKey:"AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+  authDomain:"family-tree-aec4a.firebaseapp.com",
+  projectId:"family-tree-aec4a",
+  storageBucket:"family-tree-aec4a.firebasestorage.app",
+  messagingSenderId:"956247325424",
+  appId:"1:956247325424:web:94690decde56983ff42035"
+});
 const db = getFirestore(app);
 
-// --- Global variables ---
-let people = [];
+// ── CONSTANTS ──
+const COL_W = 130;   // horizontal spacing between nodes
+const ROW_H = 160;   // vertical spacing between generations
+const AV    = 70;    // avatar diameter
 
-// --- Day/Night toggle ---
-let darkMode = false;
-document.getElementById('toggleTheme').addEventListener('click', () => {
-    darkMode = !darkMode;
-    document.body.style.background = darkMode ? '#333' : '#f4f1ea';
-    document.body.style.color = darkMode ? '#f4f1ea' : '#333';
-});
+async function loadTree(){
+  const stateEl = document.getElementById('tree-state');
+  try {
+    const snap = await getDocs(collection(db,'family'));
+    if(snap.empty){ stateEl.innerHTML='<h3>No family members yet</h3><p>Add members via the admin page.</p>'; return; }
 
-// --- Admin page button ---
-document.getElementById('adminPage').addEventListener('click', () => {
-    window.location.href = 'add-family.html';
-});
+    const people = {};
+    snap.forEach(d => { people[d.id] = { id:d.id, ...d.data() }; });
 
-// --- Helper: find children ---
-function getChildren(parentId) {
-    return people.filter(p => p.motherId === parentId || p.fatherId === parentId);
-}
+    // ── BUILD TREE STRUCTURE ──
+    // Assign depth (generation) using BFS from roots
+    // Roots = people with no motherId and no fatherId
+    const ids = Object.keys(people);
 
-// --- Create person tree recursively ---
-function createPersonTree(person, drawn = new Set()) {
-    // Prevent duplicates if spouse has already been drawn
-    if (drawn.has(person.id)) return null;
-    drawn.add(person.id);
-
-    const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.alignItems = 'center';
-    container.style.position = 'relative';
-
-    // Person + spouse
-    const spouseDiv = document.createElement('div');
-    spouseDiv.className = 'spouse';
-
-    const selfDiv = document.createElement('div');
-    selfDiv.className = 'person';
-    const img = document.createElement('img');
-    img.src = person.photo || 'https://via.placeholder.com/60'; // placeholder
-    selfDiv.appendChild(img);
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = person.name || '—';
-    selfDiv.appendChild(nameSpan);
-    spouseDiv.appendChild(selfDiv);
-
-    if (person.spouseId) {
-        const spouse = people.find(x => x.id === person.spouseId);
-        if (spouse && !drawn.has(spouse.id)) {
-            drawn.add(spouse.id);
-            const sDiv = document.createElement('div');
-            sDiv.className = 'person';
-            const sImg = document.createElement('img');
-            sImg.src = spouse.photo || 'https://via.placeholder.com/60';
-            sDiv.appendChild(sImg);
-            const sName = document.createElement('span');
-            sName.textContent = spouse.name || '—';
-            sDiv.appendChild(sName);
-            spouseDiv.appendChild(sDiv);
-        }
-    }
-
-    container.appendChild(spouseDiv);
-
-    // Children
-    const children = getChildren(person.id);
-    if (children.length) {
-        const lineDown = document.createElement('div');
-        lineDown.className = 'line-down';
-        lineDown.style.height = '20px';
-        spouseDiv.appendChild(lineDown);
-
-        const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'children';
-
-        const hLine = document.createElement('div');
-        hLine.className = 'line-horizontal';
-        hLine.style.width = `${children.length * 120}px`;
-        childrenContainer.appendChild(hLine);
-
-        children.forEach(child => {
-            const childTree = createPersonTree(child, drawn);
-            if (childTree) {
-                childTree.style.margin = '0 10px';
-                childrenContainer.appendChild(childTree);
-            }
-        });
-
-        container.appendChild(childrenContainer);
-    }
-
-    return container;
-}
-
-// --- Build tree ---
-function buildTree() {
-    const tree = document.getElementById('familyTree');
-    tree.innerHTML = '';
-    const drawn = new Set();
-    const roots = people.filter(p => !p.motherId && !p.fatherId);
-    roots.forEach(root => {
-        const treeNode = createPersonTree(root, drawn);
-        if (treeNode) tree.appendChild(treeNode);
+    // depth map
+    const depth = {};
+    // First pass: roots get depth 0
+    ids.forEach(id => {
+      const p = people[id];
+      if(!p.motherId && !p.fatherId) depth[id] = 0;
     });
+
+    // BFS to assign depths to children
+    let changed = true;
+    while(changed){
+      changed = false;
+      ids.forEach(id => {
+        const p = people[id];
+        const md = p.motherId && depth[p.motherId] !== undefined ? depth[p.motherId] : null;
+        const fd = p.fatherId && depth[p.fatherId] !== undefined ? depth[p.fatherId] : null;
+        const parentDepth = md !== null ? md : (fd !== null ? fd : null);
+        if(parentDepth !== null){
+          const desired = parentDepth + 1;
+          if(depth[id] === undefined || depth[id] < desired){ depth[id] = desired; changed = true; }
+        }
+      });
+    }
+    // Anyone still unassigned gets depth 0
+    ids.forEach(id => { if(depth[id]===undefined) depth[id]=0; });
+
+    // Sync spouse depths (spouses should be at same depth)
+    ids.forEach(id => {
+      const p = people[id];
+      if(p.spouseId && people[p.spouseId]){
+        const d = Math.max(depth[id], depth[p.spouseId]);
+        depth[id] = d;
+        depth[p.spouseId] = d;
+      }
+    });
+
+    // Group by depth
+    const byDepth = {};
+    ids.forEach(id => {
+      const d = depth[id];
+      if(!byDepth[d]) byDepth[d] = [];
+      byDepth[d].push(id);
+    });
+    const depths = Object.keys(byDepth).map(Number).sort((a,b)=>a-b);
+
+    // ── ORDER NODES within each depth ──
+    // Keep spouses adjacent, children near their parents
+    const ordered = {};
+    depths.forEach(d => {
+      const group = byDepth[d];
+      // Sort: put spouses next to each other
+      const placed = new Set();
+      const result = [];
+      group.forEach(id => {
+        if(placed.has(id)) return;
+        placed.add(id);
+        result.push(id);
+        const p = people[id];
+        // Place spouse right next to this person
+        if(p.spouseId && group.includes(p.spouseId) && !placed.has(p.spouseId)){
+          placed.add(p.spouseId);
+          result.push(p.spouseId);
+        }
+      });
+      ordered[d] = result;
+    });
+
+    // ── ASSIGN X POSITIONS ──
+    const pos = {}; // id -> {x, y}
+    const maxPerRow = Math.max(...depths.map(d => ordered[d].length));
+    const canvasW = Math.max(900, (maxPerRow + 1) * COL_W);
+
+    depths.forEach(d => {
+      const row = ordered[d];
+      const totalW = row.length * COL_W;
+      const startX = canvasW/2 - totalW/2 + COL_W/2;
+      row.forEach((id, i) => {
+        pos[id] = { x: startX + i*COL_W, y: d*ROW_H + 40 };
+      });
+    });
+
+    const canvasH = (Math.max(...depths) + 1) * ROW_H + 80;
+
+    // ── RENDER ──
+    stateEl.style.display = 'none';
+    const canvas = document.getElementById('tree-canvas');
+    canvas.style.width = canvasW+'px';
+    canvas.style.height = canvasH+'px';
+
+    const svg = document.getElementById('tree-svg');
+    svg.setAttribute('width', canvasW);
+    svg.setAttribute('height', canvasH);
+    svg.innerHTML = '';
+
+    // Draw lines first
+    ids.forEach(id => {
+      const p = people[id];
+      const pPos = pos[id];
+      if(!pPos) return;
+
+      // Spouse line (horizontal dashed red)
+      if(p.spouseId && pos[p.spouseId] && id < p.spouseId){
+        const sp = pos[p.spouseId];
+        line(svg, pPos.x, pPos.y+AV/2, sp.x, sp.y+AV/2, 'rgba(255,107,107,0.4)', 2, '6,4');
+      }
+
+      // Parent → child line
+      // Find co-parent (spouse of parent)
+      const myParents = [];
+      if(p.motherId && pos[p.motherId]) myParents.push(p.motherId);
+      if(p.fatherId && pos[p.fatherId]) myParents.push(p.fatherId);
+
+      if(myParents.length > 0){
+        // Midpoint between parents
+        const xs = myParents.map(pid => pos[pid].x);
+        const midX = xs.reduce((a,b)=>a+b,0)/xs.length;
+        const parentY = Math.max(...myParents.map(pid=>pos[pid].y)) + AV + 6;
+        const childY = pPos.y;
+        const midY = (parentY + childY)/2;
+
+        // Horizontal bar across parents
+        if(myParents.length>1){
+          const ys = myParents.map(pid=>pos[pid].y+AV/2);
+          const avgY = ys.reduce((a,b)=>a+b,0)/ys.length;
+          line(svg, Math.min(...xs), Math.max(...xs), avgY, 'rgba(0,229,204,0.3)', 1.5, '4,3');
+        }
+
+        // Curved line from parent midpoint to child
+        curve(svg, midX, parentY, pPos.x, childY, midY);
+      }
+    });
+
+    // Draw nodes
+    ids.forEach(id => {
+      const p = people[id];
+      const pPos = pos[id];
+      if(!pPos) return;
+
+      const el = document.createElement('div');
+      el.className = 'node' +
+        (p.gender==='self'||(!p.motherId&&!p.fatherId&&!p.spouseId)?'':'')+
+        (p.isDeceased?' is-deceased':'');
+
+      // Detect if this is "self" node
+      const isSelf = !p.motherId && !p.fatherId && ids.filter(i=>!people[i].motherId&&!people[i].fatherId).length===1;
+
+      el.style.left = pPos.x+'px';
+      el.style.top = pPos.y+'px';
+
+      const photoHtml = p.photo
+        ? `<img src="${p.photo}" alt="${p.name}" onerror="this.parentElement.innerHTML='👤'"/>`
+        : '👤';
+      const candleHtml = p.isDeceased ? '<span class="candle">🕯</span>' : '';
+      const dob = p.dob ? new Date(p.dob).getFullYear() : '';
+      const dod = p.dod ? new Date(p.dod).getFullYear() : '';
+      const years = dob ? (dod ? `${dob}–${dod}` : `b. ${dob}`) : '';
+
+      el.innerHTML = `
+        <div class="node-avatar">${candleHtml}${photoHtml}</div>
+        <div class="node-name">${p.name||'Unknown'}</div>
+        ${years?`<div class="node-sub">${years}</div>`:''}`;
+
+      el.addEventListener('click', ()=>showPopup(p, people));
+      canvas.appendChild(el);
+    });
+
+  }catch(e){
+    document.getElementById('tree-state').innerHTML=`<h3>Error loading tree</h3><p>${e.message}</p>`;
+    console.error(e);
+  }
 }
 
-// --- Real-time Firebase updates ---
-onSnapshot(collection(db, "family"), snap => {
-    people = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    buildTree();
-});
-</script>
+function line(svg,x1,y1,x2,y2,color,w,dash=''){
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+  l.setAttribute('stroke',color);l.setAttribute('stroke-width',w);
+  if(dash)l.setAttribute('stroke-dasharray',dash);
+  svg.appendChild(l);
+}
+function curve(svg,x1,y1,x2,y2,midY,color='rgba(0,229,204,0.28)',w=1.5){
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',`M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`);
+  p.setAttribute('stroke',color);p.setAttribute('stroke-width',w);p.setAttribute('fill','none');
+  svg.appendChild(p);
+}
 
+function showPopup(p, people){
+  const avEl=document.getElementById('pop-avatar');
+  avEl.innerHTML = p.photo ? `<img src="${p.photo}" alt="${p.name}"/>` : '👤';
+  document.getElementById('pop-name').textContent = (p.isDeceased?'🕯 ':'')+p.name;
+  const mother = p.motherId && people[p.motherId] ? people[p.motherId].name : null;
+  const father = p.fatherId && people[p.fatherId] ? people[p.fatherId].name : null;
+  const spouseId = p.spouseId || Object.values(people).find(x=>x.spouseId===p.id)?.id;
+  const spouse = spouseId && people[spouseId] ? people[spouseId].name : null;
+  document.getElementById('pop-sub').textContent = p.gender||'';
+
+  let html='';
+  if(p.dob) html+=row('Born', formatDate(p.dob));
+  if(p.dod) html+=row('Passed', formatDate(p.dod));
+  if(mother) html+=row('Mother', mother);
+  if(father) html+=row('Father', father);
+  if(spouse) html+=row('Spouse', spouse);
+  if(p.bio) html+=row('About', p.bio);
+  document.getElementById('pop-details').innerHTML=html;
+  document.getElementById('pop-overlay').classList.add('show');
+}
+function row(label,val){ return `<div class="pop-row"><span class="pop-lbl">${label}</span><span class="pop-val">${val}</span></div>`; }
+function formatDate(d){ try{ return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch{ return d; } }
+
+document.getElementById('pop-close').addEventListener('click',()=>document.getElementById('pop-overlay').classList.remove('show'));
+document.getElementById('pop-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('pop-overlay'))document.getElementById('pop-overlay').classList.remove('show'); });
+
+// Theme
+const html=document.documentElement;
+const saved=localStorage.getItem('theme')||'dark';
+html.setAttribute('data-theme',saved);
+['theme-toggle','theme-toggle-mobile'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=saved==='dark'?'🌙':'☀️';
+  el.addEventListener('click',()=>{
+    const cur=html.getAttribute('data-theme');
+    const next=cur==='dark'?'light':'dark';
+    html.setAttribute('data-theme',next);
+    ['theme-toggle','theme-toggle-mobile'].forEach(i=>{const e=document.getElementById(i);if(e)e.textContent=next==='dark'?'🌙':'☀️';});
+    localStorage.setItem('theme',next);
+  });
+});
+
+// Mobile nav
+const hamBtn=document.getElementById('ham-btn');
+const drawer=document.getElementById('mobile-drawer');
+const overlay=document.getElementById('overlay');
+const closeNav=()=>{drawer.classList.remove('open');overlay.classList.remove('show');hamBtn.classList.remove('open');};
+hamBtn.addEventListener('click',()=>{drawer.classList.add('open');overlay.classList.add('show');hamBtn.classList.add('open');});
+overlay.addEventListener('click',closeNav);
+document.querySelectorAll('.drawer-link').forEach(l=>l.addEventListener('click',closeNav));
+
+loadTree();
+</script>
 </body>
 </html>
