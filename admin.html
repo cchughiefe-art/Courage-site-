@@ -5,413 +5,564 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin — Courage's Blog</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Serif+Display:ital@0;1&family=Space+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
   <style>
     :root {
-      --bg: #080A0E;
-      --surface: #111318;
-      --surface2: #181B22;
-      --text: #EEF0F5;
-      --text-muted: #6B7280;
-      --text-dim: #9CA3AF;
-      --accent: #00E5CC;
-      --accent-dark: #007A6E;
-      --border: rgba(255,255,255,0.07);
-      --error: #FF6B6B;
-      --success: #00E5CC;
+      --bg:#080A0E; --surface:#111318; --surface2:#181B22;
+      --text:#EEF0F5; --text-muted:#6B7280; --text-dim:#9CA3AF;
+      --accent:#00E5CC; --border:rgba(255,255,255,0.07);
+      --error:#FF6B6B; --success:#00E5CC;
     }
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Syne', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem 1rem;}
+    body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,204,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,204,.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
+    .glow{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;opacity:.06;}
+    .g1{width:500px;height:500px;background:var(--accent);top:-150px;right:-150px;}
+    .g2{width:300px;height:300px;background:#FF6B6B;bottom:10%;left:-100px;}
 
-    /* Grid bg */
-    body::after {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        linear-gradient(rgba(0,229,204,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,229,204,0.025) 1px, transparent 1px);
-      background-size: 60px 60px;
-      pointer-events: none; z-index: 0;
-    }
+    .card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.5);margin-top:2rem;margin-bottom:2rem;}
+    .back-link{display:inline-flex;align-items:center;gap:.5rem;color:var(--text-muted);text-decoration:none;font-size:.8rem;font-family:'Space Mono',monospace;letter-spacing:.1em;margin-bottom:2rem;transition:color .2s;}
+    .back-link:hover{color:var(--accent);}
+    .card-title{font-family:'DM Serif Display',serif;font-size:2rem;letter-spacing:-1px;margin-bottom:.3rem;}
+    .card-title em{color:var(--accent);font-style:italic;}
+    .card-sub{color:var(--text-muted);font-size:.85rem;margin-bottom:2rem;}
 
-    .glow { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; opacity: 0.06; }
-    .g1 { width:500px;height:500px;background:var(--accent);top:-150px;right:-150px; }
-    .g2 { width:300px;height:300px;background:#FF6B6B;bottom:10%;left:-100px; }
+    .field{margin-bottom:1.2rem;}
+    label{display:block;font-size:.72rem;font-family:'Space Mono',monospace;color:var(--text-muted);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.45rem;}
+    input,textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--text);font-family:'Syne',sans-serif;font-size:.9rem;transition:border-color .2s,box-shadow .2s;outline:none;resize:vertical;}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,204,.1);}
+    input[type="password"]{letter-spacing:.2em;}
+    input[type="date"]{color-scheme:dark;}
+    input[type="checkbox"]{width:auto;margin-right:.5rem;accent-color:var(--accent);}
+    input[type="file"]{padding:.5rem;}
+    textarea{min-height:100px;line-height:1.7;}
+    select option,select optgroup{background:var(--surface2);}
 
-    .card {
-      position: relative;
-      z-index: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 3rem;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
+    .btn{width:100%;padding:.95rem;background:var(--accent);color:#080A0E;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .3s;letter-spacing:.05em;}
+    .btn:hover{background:#00c4af;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,204,.3);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+    .btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+    .btn-outline:hover{background:rgba(0,229,204,.1);transform:none;box-shadow:none;}
+    .btn-danger{background:rgba(255,107,107,.15);border:1px solid rgba(255,107,107,.3);color:var(--error);}
+    .btn-danger:hover{background:rgba(255,107,107,.25);transform:none;box-shadow:none;}
+    .btn-sm{width:auto;padding:.4rem .85rem;font-size:.75rem;}
 
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.8rem;
-      font-family: 'Space Mono', monospace;
-      letter-spacing: 0.1em;
-      margin-bottom: 2rem;
-      transition: color 0.2s;
-    }
-    .back-link:hover { color: var(--accent); }
+    .msg{display:none;padding:.85rem 1rem;border-radius:8px;font-size:.82rem;margin-bottom:1.3rem;font-family:'Space Mono',monospace;}
+    .msg.error{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:var(--error);display:block;}
+    .msg.success{background:rgba(0,229,204,.1);border:1px solid rgba(0,229,204,.3);color:var(--success);display:block;}
 
-    .card-title {
-      font-family: 'DM Serif Display', serif;
-      font-size: 2.2rem;
-      letter-spacing: -1px;
-      margin-bottom: 0.4rem;
-    }
-    .card-title em { color: var(--accent); font-style: italic; }
-    .card-sub {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-bottom: 2.5rem;
-    }
+    .tabs{display:flex;gap:.5rem;margin-bottom:2rem;background:var(--surface2);padding:.4rem;border-radius:10px;}
+    .tab{flex:1;padding:.65rem;text-align:center;border:none;background:none;color:var(--text-muted);font-family:'Syne',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;border-radius:7px;transition:all .2s;}
+    .tab.active{background:var(--surface);color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.3);}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
 
-    .field { margin-bottom: 1.5rem; }
-    label {
-      display: block;
-      font-size: 0.72rem;
-      font-family: 'Space Mono', monospace;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      margin-bottom: 0.6rem;
-    }
-    input, textarea, select {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.85rem 1rem;
-      color: var(--text);
-      font-family: 'Syne', sans-serif;
-      font-size: 0.95rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      outline: none;
-      resize: vertical;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(0,229,204,0.1);
-    }
-    input[type="password"] { letter-spacing: 0.2em; }
-    textarea { min-height: 160px; line-height: 1.7; }
-    select option { background: var(--surface2); }
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem;}
+    @media(max-width:500px){.grid2{grid-template-columns:1fr;}}
 
-    .btn {
-      width: 100%;
-      padding: 1rem;
-      background: var(--accent);
-      color: #080A0E;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Syne', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-      letter-spacing: 0.05em;
-    }
-    .btn:hover { background: #00c4af; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,229,204,0.3); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .sep{border:none;border-top:1px solid var(--border);margin:1.8rem 0;}
+    .mini-label{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:1rem;}
+    .char-count{font-size:.7rem;color:var(--text-muted);font-family:'Space Mono',monospace;text-align:right;margin-top:.3rem;}
+    .logout-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+    .logout-btn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:.4rem 1rem;border-radius:6px;font-size:.72rem;cursor:pointer;font-family:'Space Mono',monospace;transition:all .2s;}
+    .logout-btn:hover{border-color:var(--error);color:var(--error);}
 
-    .msg {
-      display: none;
-      padding: 0.9rem 1rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      margin-bottom: 1.5rem;
-      font-family: 'Space Mono', monospace;
-    }
-    .msg.error { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: var(--error); display: block; }
-    .msg.success { background: rgba(0,229,204,0.1); border: 1px solid rgba(0,229,204,0.3); color: var(--success); display: block; }
+    /* Hint box */
+    .hint-box{background:rgba(0,229,204,.06);border:1px solid rgba(0,229,204,.15);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.5rem;font-size:.82rem;color:var(--text-dim);line-height:1.6;}
+    .hint-box strong{color:var(--accent);}
 
-    /* Login vs dashboard toggle */
-    #login-view, #dashboard-view { display: none; }
-    #login-view.active, #dashboard-view.active { display: block; }
+    /* Photo preview */
+    .photo-preview{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);display:none;margin:.8rem auto;}
+    .crop-zone{display:none;margin:1rem 0;border:1px dashed var(--border);border-radius:8px;overflow:hidden;background:var(--surface2);}
+    .crop-zone img{max-width:100%;display:block;}
 
-    .entries-list { margin-top: 2rem; }
-    .entry-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 0.8rem;
-      gap: 1rem;
-    }
-    .entry-row-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .entry-row-date {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-    .delete-btn {
-      background: rgba(255,107,107,0.1);
-      border: 1px solid rgba(255,107,107,0.2);
-      color: var(--error);
-      padding: 0.4rem 0.8rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-family: 'Space Mono', monospace;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .delete-btn:hover { background: rgba(255,107,107,0.2); }
+    /* Checkbox row */
+    .check-row{display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;}
+    .check-row label{margin:0;text-transform:none;font-size:.85rem;letter-spacing:0;color:var(--text-dim);font-family:'Syne',sans-serif;}
 
-    .logout-btn {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      padding: 0.4rem 1rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-family: 'Space Mono', monospace;
-      transition: all 0.2s;
-      margin-bottom: 1.5rem;
-    }
-    .logout-btn:hover { border-color: var(--error); color: var(--error); }
+    /* List rows */
+    .list-row{display:flex;align-items:center;gap:1rem;padding:.85rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;}
+    .list-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;overflow:hidden;}
+    .list-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+    .list-info{flex:1;min-width:0;}
+    .list-title{font-size:.88rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .list-sub{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--text-muted);margin-top:.15rem;}
+    .list-actions{display:flex;gap:.4rem;flex-shrink:0;}
+    .edit-btn{background:rgba(0,229,204,.1);border:1px solid rgba(0,229,204,.2);color:var(--accent);padding:.32rem .65rem;border-radius:6px;font-size:.7rem;cursor:pointer;font-family:'Space Mono',monospace;transition:all .2s;}
+    .edit-btn:hover{background:rgba(0,229,204,.2);}
+    .del-btn{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.2);color:var(--error);padding:.32rem .65rem;border-radius:6px;font-size:.7rem;cursor:pointer;font-family:'Space Mono',monospace;transition:all .2s;}
+    .del-btn:hover{background:rgba(255,107,107,.2);}
 
-    .section-sep {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 2rem 0;
-    }
-
-    .char-count {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-family: 'Space Mono', monospace;
-      text-align: right;
-      margin-top: 0.4rem;
-    }
+    /* Edit inline form */
+    .edit-form{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:.6rem;display:none;}
+    .edit-form.show{display:block;}
+    .edit-form-actions{display:flex;gap:.6rem;margin-top:1rem;}
+    .edit-form-actions .btn{flex:1;}
   </style>
 </head>
 <body>
-
 <div class="glow g1"></div>
 <div class="glow g2"></div>
 
 <div class="card">
   <a href="index.html" class="back-link">← back to blog</a>
 
-  <!-- LOGIN VIEW -->
-  <div id="login-view" class="active">
+  <!-- LOGIN -->
+  <div id="login-view">
     <div class="card-title">Admin <em>Login</em></div>
-    <div class="card-sub">Enter your password to manage journal entries.</div>
+    <div class="card-sub">Enter your password to manage your blog.</div>
     <div id="login-msg" class="msg"></div>
     <div class="field">
       <label>Password</label>
-      <input type="password" id="password-input" placeholder="••••••••••" autocomplete="current-password"/>
+      <input type="password" id="password-input" placeholder="••••••••••"/>
     </div>
     <button class="btn" id="login-btn">Login →</button>
   </div>
 
-  <!-- DASHBOARD VIEW -->
-  <div id="dashboard-view">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-      <div class="card-title">New <em>Entry</em></div>
+  <!-- DASHBOARD -->
+  <div id="dashboard-view" style="display:none;">
+    <div class="logout-row">
+      <div class="card-title">Admin <em>Panel</em></div>
       <button class="logout-btn" id="logout-btn">logout</button>
     </div>
-    <div class="card-sub">Write a new journal entry. It'll appear on your blog instantly.</div>
 
-    <div id="post-msg" class="msg"></div>
-
-    <div class="field">
-      <label>Title</label>
-      <input type="text" id="entry-title" placeholder="What's on your mind today?" maxlength="100"/>
+    <div class="tabs">
+      <button class="tab active" data-tab="journal">📝 Journal</button>
+      <button class="tab" data-tab="family">🌳 Family Tree</button>
     </div>
-    <div class="field">
-      <label>Tag</label>
-      <select id="entry-tag">
-        <option value="Journal">Journal</option>
-        <option value="Milestone">Milestone</option>
-        <option value="Thoughts">Thoughts</option>
-        <option value="Lagos Life">Lagos Life</option>
-        <option value="Tech">Tech</option>
-        <option value="Personal">Personal</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Content</label>
-      <textarea id="entry-content" placeholder="Write your thoughts here..." maxlength="2000"></textarea>
-      <div class="char-count"><span id="char-num">0</span> / 2000</div>
-    </div>
-    <button class="btn" id="post-btn">Publish Entry →</button>
 
-    <hr class="section-sep"/>
+    <!-- ══════════════ JOURNAL TAB ══════════════ -->
+    <div id="tab-journal" class="tab-panel active">
+      <div class="card-sub">Write a new journal entry.</div>
+      <div id="journal-msg" class="msg"></div>
+      <div class="field"><label>Title</label><input type="text" id="entry-title" placeholder="What's on your mind?" maxlength="100"/></div>
+      <div class="field">
+        <label>Tag</label>
+        <select id="entry-tag">
+          <option>Journal</option><option>Milestone</option><option>Thoughts</option>
+          <option>Lagos Life</option><option>Tech</option><option>Personal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Content</label>
+        <textarea id="entry-content" placeholder="Write your thoughts..." maxlength="2000"></textarea>
+        <div class="char-count"><span id="char-num">0</span>/2000</div>
+      </div>
+      <button class="btn" id="post-btn">Publish Entry →</button>
+      <hr class="sep"/>
+      <div class="mini-label">Existing Entries</div>
+      <div id="journal-list"><div style="color:var(--text-muted);font-size:.85rem;">Loading...</div></div>
+    </div>
 
-    <div style="font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--text-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;">Existing Entries</div>
-    <div id="entries-list">
-      <div style="color:var(--text-muted);font-size:0.85rem;">Loading...</div>
+    <!-- ══════════════ FAMILY TAB ══════════════ -->
+    <div id="tab-family" class="tab-panel">
+
+      <div class="hint-box">
+        <strong>Tip:</strong> Start by adding root ancestors (grandparents with no parents set). Then add their children and link them. Spouses are linked automatically in both directions.
+      </div>
+
+      <div id="family-msg" class="msg"></div>
+      <div id="fam-form-title" style="font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:1.2rem;">Add <em style="color:var(--accent);font-style:italic;">New Member</em></div>
+
+      <!-- PARENTS -->
+      <div class="grid2">
+        <div class="field"><label>Mother</label><select id="fam-mother"><option value="">— none —</option></select></div>
+        <div class="field"><label>Father</label><select id="fam-father"><option value="">— none —</option></select></div>
+      </div>
+
+      <!-- SPOUSE -->
+      <div class="field"><label>Spouse / Partner</label><select id="fam-spouse"><option value="">— none —</option></select></div>
+
+      <!-- NAME + GENDER -->
+      <div class="grid2">
+        <div class="field"><label>Full Name *</label><input type="text" id="fam-name" placeholder="e.g. Aisha Yusuf"/></div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="fam-gender">
+            <option value="">—</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- DOB + DECEASED -->
+      <div class="grid2">
+        <div class="field"><label>Date of Birth</label><input type="date" id="fam-dob"/></div>
+        <div class="field"><label>Date of Passing</label><input type="date" id="fam-dod"/></div>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" id="fam-deceased"/>
+        <label for="fam-deceased">Mark as deceased (🕯 candle shown on tree)</label>
+      </div>
+
+      <!-- BIO -->
+      <div class="field"><label>Short Bio / Memories</label><textarea id="fam-bio" placeholder="A few words about their life..." style="min-height:80px;" maxlength="400"></textarea></div>
+
+      <!-- PHOTO -->
+      <div class="field">
+        <label>Photo (will be cropped to circle)</label>
+        <input type="file" id="fam-pic" accept="image/*"/>
+        <div class="crop-zone" id="crop-zone"><img id="crop-img" style="max-width:100%;"/></div>
+        <img id="current-photo" class="photo-preview" alt="Current photo"/>
+      </div>
+
+      <!-- ACTIONS -->
+      <div style="display:flex;gap:.8rem;margin-top:.5rem;">
+        <button class="btn" id="fam-save-btn">Add to Tree →</button>
+        <button class="btn btn-outline" id="fam-cancel-btn" style="display:none;width:auto;padding:.95rem 1.5rem;">Cancel</button>
+      </div>
+
+      <hr class="sep"/>
+
+      <!-- WIPE -->
+      <div style="margin-bottom:1.5rem;">
+        <button class="btn btn-danger btn-sm" id="wipe-btn">⚠️ Wipe Entire Family Tree</button>
+      </div>
+
+      <div class="mini-label">Family Members (<span id="fam-count">0</span>)</div>
+      <div id="family-list"><div style="color:var(--text-muted);font-size:.85rem;">Loading...</div></div>
     </div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
-    authDomain: "family-tree-aec4a.firebaseapp.com",
-    projectId: "family-tree-aec4a",
-    storageBucket: "family-tree-aec4a.firebasestorage.app",
-    messagingSenderId: "956247325424",
-    appId: "1:956247325424:web:94690decde56983ff42035"
+const firebaseConfig = {
+  apiKey:"AIzaSyD00bj-hV8VSdJxAyCdqqpT7VWDMb9qNTQ",
+  authDomain:"family-tree-aec4a.firebaseapp.com",
+  projectId:"family-tree-aec4a",
+  storageBucket:"family-tree-aec4a.firebasestorage.app",
+  messagingSenderId:"956247325424",
+  appId:"1:956247325424:web:94690decde56983ff42035"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const PASS = "Courage123#";
+const SESSION = "blog_admin_auth";
+
+// ── AUTH ──
+if (sessionStorage.getItem(SESSION)==='true') showDashboard();
+document.getElementById('login-btn').addEventListener('click', () => {
+  const pw = document.getElementById('password-input').value;
+  const msg = document.getElementById('login-msg');
+  if (pw===PASS){ sessionStorage.setItem(SESSION,'true'); showDashboard(); }
+  else { msg.textContent='❌ Wrong password.'; msg.className='msg error'; }
+});
+document.getElementById('password-input').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-btn').click(); });
+document.getElementById('logout-btn').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION);
+  document.getElementById('dashboard-view').style.display='none';
+  document.getElementById('login-view').style.display='block';
+  document.getElementById('password-input').value='';
+});
+
+function showDashboard(){
+  document.getElementById('login-view').style.display='none';
+  document.getElementById('dashboard-view').style.display='block';
+  initJournal();
+  initFamily();
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+}));
+
+// ════════════════════════════════════════
+// JOURNAL
+// ════════════════════════════════════════
+function initJournal(){
+  document.getElementById('entry-content').addEventListener('input', function(){ document.getElementById('char-num').textContent=this.value.length; });
+  document.getElementById('post-btn').addEventListener('click', postJournal);
+  loadJournalList();
+}
+
+async function postJournal(){
+  const title=document.getElementById('entry-title').value.trim();
+  const content=document.getElementById('entry-content').value.trim();
+  const tag=document.getElementById('entry-tag').value;
+  const msg=document.getElementById('journal-msg');
+  const btn=document.getElementById('post-btn');
+  if(!title||!content){msg.textContent='⚠️ Fill in title and content.';msg.className='msg error';return;}
+  btn.disabled=true;btn.textContent='Publishing...';msg.className='msg';
+  try{
+    // Always addDoc — never overwrites existing entries
+    await addDoc(collection(db,'journal'),{title,content,tag,createdAt:serverTimestamp()});
+    msg.textContent='✅ Entry published!';msg.className='msg success';
+    document.getElementById('entry-title').value='';
+    document.getElementById('entry-content').value='';
+    document.getElementById('char-num').textContent='0';
+    loadJournalList(); // refresh list to show new entry
+  }catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+  btn.disabled=false;btn.textContent='Publish Entry →';
+}
+
+async function loadJournalList(){
+  const list=document.getElementById('journal-list');
+  try{
+    const snap=await getDocs(query(collection(db,'journal'),orderBy('createdAt','desc')));
+    if(snap.empty){list.innerHTML='<div style="color:var(--text-muted);font-size:.85rem;">No entries yet.</div>';return;}
+    list.innerHTML='';
+    snap.forEach(d=>{
+      const data=d.data();
+      const date=data.createdAt?new Date(data.createdAt.seconds*1000).toLocaleDateString('en-GB'):'Just now';
+      const row=document.createElement('div');
+      row.className='list-row';
+      row.innerHTML=`
+        <div class="list-info"><div class="list-title">${data.title}</div><div class="list-sub">${date} · ${data.tag||'Journal'}</div></div>
+        <div class="list-actions">
+          <button class="edit-btn" data-id="${d.id}">edit</button>
+          <button class="del-btn" data-id="${d.id}">delete</button>
+        </div>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.del-btn').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('Delete this entry?'))return;
+      await deleteDoc(doc(db,'journal',b.dataset.id));loadJournalList();
+    }));
+    list.querySelectorAll('.edit-btn').forEach(b=>b.addEventListener('click',async()=>{
+      const all=await getDocs(collection(db,'journal'));
+      const entry=all.docs.find(d=>d.id===b.dataset.id)?.data();
+      if(!entry)return;
+      // Prefill form for editing
+      document.getElementById('entry-title').value=entry.title;
+      document.getElementById('entry-content').value=entry.content;
+      document.getElementById('entry-tag').value=entry.tag||'Journal';
+      document.getElementById('char-num').textContent=entry.content.length;
+      document.getElementById('journal-msg').textContent='✏️ Editing entry — press Save Changes when done.';
+      document.getElementById('journal-msg').className='msg success';
+      document.getElementById('post-btn').textContent='Save Changes →';
+      // Replace onclick with update (never creates a new entry)
+      const editId=b.dataset.id;
+      document.getElementById('post-btn').onclick=async()=>{
+        const t=document.getElementById('entry-title').value.trim();
+        const c=document.getElementById('entry-content').value.trim();
+        const tg=document.getElementById('entry-tag').value;
+        if(!t||!c)return;
+        await updateDoc(doc(db,'journal',editId),{title:t,content:c,tag:tg});
+        document.getElementById('journal-msg').textContent='✅ Entry updated!';
+        document.getElementById('journal-msg').className='msg success';
+        resetJournalForm();
+        loadJournalList();
+      };
+      document.getElementById('entry-title').scrollIntoView({behavior:'smooth',block:'center'});
+    }));
+  }catch(e){list.innerHTML=`<div style="color:var(--error);font-size:.85rem;">${e.message}</div>`;}
+}
+
+function resetJournalForm(){
+  document.getElementById('entry-title').value='';
+  document.getElementById('entry-content').value='';
+  document.getElementById('char-num').textContent='0';
+  document.getElementById('post-btn').textContent='Publish Entry →';
+  document.getElementById('post-btn').onclick=postJournal;
+}
+
+// ════════════════════════════════════════
+// FAMILY TREE
+// ════════════════════════════════════════
+let people=[];
+let editingFamId=null;
+let cropper=null;
+let currentPhotoData=null;
+
+function initFamily(){
+  // Real-time listener
+  onSnapshot(collection(db,'family'), snap=>{
+    people=snap.docs.map(d=>({id:d.id,...d.data()}));
+    populateDropdowns();
+    renderFamilyList();
+  });
+
+  // Photo cropper
+  document.getElementById('fam-pic').addEventListener('change', e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const zone=document.getElementById('crop-zone');
+      const img=document.getElementById('crop-img');
+      img.src=ev.target.result;
+      zone.style.display='block';
+      if(cropper)cropper.destroy();
+      cropper=new Cropper(img,{aspectRatio:1,viewMode:2});
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('fam-save-btn').addEventListener('click', saveFamilyMember);
+  document.getElementById('fam-cancel-btn').addEventListener('click', resetFamilyForm);
+  document.getElementById('wipe-btn').addEventListener('click', wipeFamily);
+}
+
+function populateDropdowns(){
+  const populate=(id,genderFilter=null)=>{
+    const sel=document.getElementById(id);
+    const prev=sel.value;
+    sel.innerHTML='<option value="">— none —</option>';
+    people.forEach(p=>{
+      if(editingFamId && p.id===editingFamId)return; // can't pick self
+      if(genderFilter && p.gender && p.gender!==genderFilter)return;
+      sel.innerHTML+=`<option value="${p.id}">${p.name||'Unnamed'}${p.isDeceased?' 🕯':''}</option>`;
+    });
+    sel.value=prev;
+  };
+  populate('fam-mother','female');
+  populate('fam-father','male');
+  populate('fam-spouse');
+}
+
+async function saveFamilyMember(){
+  const name=document.getElementById('fam-name').value.trim();
+  const msg=document.getElementById('family-msg');
+  const btn=document.getElementById('fam-save-btn');
+  if(!name){msg.textContent='⚠️ Name is required.';msg.className='msg error';return;}
+
+  const motherId=document.getElementById('fam-mother').value||null;
+  const fatherId=document.getElementById('fam-father').value||null;
+  const spouseId=document.getElementById('fam-spouse').value||null;
+
+  // Validation
+  if(editingFamId&&(motherId===editingFamId||fatherId===editingFamId||spouseId===editingFamId)){
+    msg.textContent='⚠️ Cannot assign self as parent or spouse.';msg.className='msg error';return;
+  }
+
+  btn.disabled=true;btn.textContent='Saving...';msg.className='msg';
+
+  const data={
+    name,
+    gender:document.getElementById('fam-gender').value||null,
+    dob:document.getElementById('fam-dob').value||null,
+    dod:document.getElementById('fam-dod').value||null,
+    isDeceased:document.getElementById('fam-deceased').checked,
+    bio:document.getElementById('fam-bio').value.trim()||null,
+    motherId, fatherId, spouseId
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  // Photo
+  if(cropper){
+    data.photo=cropper.getCroppedCanvas({width:300}).toDataURL('image/jpeg',.8);
+  } else if(currentPhotoData&&editingFamId){
+    data.photo=currentPhotoData;
+  }
 
-  const ADMIN_PASSWORD = "Courage123#";
-  const SESSION_KEY = "blog_admin_auth";
-
-  // Check if already logged in
-  if (sessionStorage.getItem(SESSION_KEY) === "true") showDashboard();
-
-  // Login
-  document.getElementById('login-btn').addEventListener('click', () => {
-    const pw = document.getElementById('password-input').value;
-    const msg = document.getElementById('login-msg');
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, "true");
-      msg.className = 'msg';
-      showDashboard();
+  try{
+    if(editingFamId){
+      await updateDoc(doc(db,'family',editingFamId),data);
+      // Sync spouse bidirectionally
+      if(spouseId) await updateDoc(doc(db,'family',spouseId),{spouseId:editingFamId});
+      msg.textContent='✅ Member updated!';msg.className='msg success';
     } else {
-      msg.textContent = "❌ Wrong password. Try again.";
-      msg.className = 'msg error';
+      data.createdAt=serverTimestamp();
+      const ref=await addDoc(collection(db,'family'),data);
+      if(spouseId) await updateDoc(doc(db,'family',spouseId),{spouseId:ref.id});
+      msg.textContent='✅ Member added to the tree!';msg.className='msg success';
     }
+    resetFamilyForm();
+  }catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+  btn.disabled=false;btn.textContent=editingFamId?'Save Changes →':'Add to Tree →';
+}
+
+function startEditFamily(id){
+  const p=people.find(x=>x.id===id);
+  if(!p)return;
+  editingFamId=id;
+  document.getElementById('fam-form-title').innerHTML='Edit <em style="color:var(--accent);font-style:italic;">Family Member</em>';
+  document.getElementById('fam-save-btn').textContent='Save Changes →';
+  document.getElementById('fam-cancel-btn').style.display='inline-flex';
+
+  document.getElementById('fam-name').value=p.name||'';
+  document.getElementById('fam-gender').value=p.gender||'';
+  document.getElementById('fam-dob').value=p.dob||'';
+  document.getElementById('fam-dod').value=p.dod||'';
+  document.getElementById('fam-deceased').checked=!!p.isDeceased;
+  document.getElementById('fam-bio').value=p.bio||'';
+  document.getElementById('fam-mother').value=p.motherId||'';
+  document.getElementById('fam-father').value=p.fatherId||'';
+  document.getElementById('fam-spouse').value=p.spouseId||'';
+
+  // Show current photo
+  currentPhotoData=p.photo||null;
+  const prevImg=document.getElementById('current-photo');
+  if(currentPhotoData){prevImg.src=currentPhotoData;prevImg.style.display='block';}
+  else{prevImg.style.display='none';}
+
+  // Reset cropper
+  document.getElementById('crop-zone').style.display='none';
+  document.getElementById('fam-pic').value='';
+  if(cropper){cropper.destroy();cropper=null;}
+
+  populateDropdowns();
+  document.getElementById('fam-name').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function resetFamilyForm(){
+  editingFamId=null;
+  currentPhotoData=null;
+  document.getElementById('fam-form-title').innerHTML='Add <em style="color:var(--accent);font-style:italic;">New Member</em>';
+  document.getElementById('fam-save-btn').textContent='Add to Tree →';
+  document.getElementById('fam-cancel-btn').style.display='none';
+  ['fam-name','fam-dob','fam-dod','fam-bio'].forEach(id=>document.getElementById(id).value='');
+  ['fam-gender','fam-mother','fam-father','fam-spouse'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fam-deceased').checked=false;
+  document.getElementById('current-photo').style.display='none';
+  document.getElementById('crop-zone').style.display='none';
+  document.getElementById('fam-pic').value='';
+  if(cropper){cropper.destroy();cropper=null;}
+  populateDropdowns();
+}
+
+function renderFamilyList(){
+  const list=document.getElementById('family-list');
+  document.getElementById('fam-count').textContent=people.length;
+  if(!people.length){list.innerHTML='<div style="color:var(--text-muted);font-size:.85rem;">No members yet.</div>';return;}
+  list.innerHTML='';
+  people.forEach(p=>{
+    const mother=people.find(x=>x.id===p.motherId)?.name||'—';
+    const father=people.find(x=>x.id===p.fatherId)?.name||'—';
+    const spouse=people.find(x=>x.id===p.spouseId||x.spouseId===p.id)?.name||'—';
+    const row=document.createElement('div');
+    row.className='list-row';
+    const photoHtml=p.photo
+      ?`<div class="list-avatar"><img src="${p.photo}" alt="${p.name}"/></div>`
+      :`<div class="list-avatar">👤</div>`;
+    row.innerHTML=`
+      ${photoHtml}
+      <div class="list-info">
+        <div class="list-title">${p.name||'Unnamed'}${p.isDeceased?' 🕯':''}</div>
+        <div class="list-sub">M: ${mother} · F: ${father} · ♥: ${spouse}</div>
+      </div>
+      <div class="list-actions">
+        <button class="edit-btn" data-id="${p.id}">edit</button>
+        <button class="del-btn" data-id="${p.id}">delete</button>
+      </div>`;
+    list.appendChild(row);
   });
+  list.querySelectorAll('.edit-btn').forEach(b=>b.addEventListener('click',()=>startEditFamily(b.dataset.id)));
+  list.querySelectorAll('.del-btn').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm(`Remove ${people.find(p=>p.id===b.dataset.id)?.name||'this person'} from the tree?`))return;
+    await deleteDoc(doc(db,'family',b.dataset.id));
+  }));
+}
 
-  // Allow Enter key on password
-  document.getElementById('password-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('login-btn').click();
-  });
-
-  // Logout
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    sessionStorage.removeItem(SESSION_KEY);
-    document.getElementById('dashboard-view').classList.remove('active');
-    document.getElementById('login-view').classList.add('active');
-    document.getElementById('password-input').value = '';
-  });
-
-  // Char counter
-  document.getElementById('entry-content').addEventListener('input', function() {
-    document.getElementById('char-num').textContent = this.value.length;
-  });
-
-  // Post entry
-  document.getElementById('post-btn').addEventListener('click', async () => {
-    const title = document.getElementById('entry-title').value.trim();
-    const content = document.getElementById('entry-content').value.trim();
-    const tag = document.getElementById('entry-tag').value;
-    const msg = document.getElementById('post-msg');
-    const btn = document.getElementById('post-btn');
-
-    if (!title || !content) {
-      msg.textContent = "⚠️ Please fill in both title and content.";
-      msg.className = 'msg error';
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = "Publishing...";
-    msg.className = 'msg';
-
-    try {
-      await addDoc(collection(db, 'journal'), {
-        title, content, tag,
-        createdAt: serverTimestamp()
-      });
-      msg.textContent = "✅ Entry published! It's now live on your blog.";
-      msg.className = 'msg success';
-      document.getElementById('entry-title').value = '';
-      document.getElementById('entry-content').value = '';
-      document.getElementById('char-num').textContent = '0';
-      loadExistingEntries();
-    } catch(e) {
-      msg.textContent = "❌ Error: " + e.message;
-      msg.className = 'msg error';
-    }
-
-    btn.disabled = false;
-    btn.textContent = "Publish Entry →";
-  });
-
-  function showDashboard() {
-    document.getElementById('login-view').classList.remove('active');
-    document.getElementById('dashboard-view').classList.add('active');
-    loadExistingEntries();
-  }
-
-  async function loadExistingEntries() {
-    const list = document.getElementById('entries-list');
-    list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">Loading...</div>';
-    try {
-      const q = query(collection(db, 'journal'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        list.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">No entries yet.</div>';
-        return;
-      }
-      list.innerHTML = '';
-      snap.forEach(d => {
-        const data = d.data();
-        const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('en-GB') : 'Just now';
-        const row = document.createElement('div');
-        row.className = 'entry-row';
-        row.innerHTML = `
-          <div class="entry-row-title">${data.title}</div>
-          <div class="entry-row-date">${date}</div>
-          <button class="delete-btn" data-id="${d.id}">delete</button>`;
-        list.appendChild(row);
-      });
-
-      // Delete handlers
-      list.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!confirm('Delete this entry? This cannot be undone.')) return;
-          await deleteDoc(doc(db, 'journal', btn.dataset.id));
-          loadExistingEntries();
-        });
-      });
-    } catch(e) {
-      list.innerHTML = `<div style="color:var(--error);font-size:0.85rem;">Error loading entries: ${e.message}</div>`;
-    }
-  }
+async function wipeFamily(){
+  if(!confirm('⚠️ This will delete the ENTIRE family tree. Are you sure?'))return;
+  if(!confirm('Last chance — really wipe everything?'))return;
+  const snap=await getDocs(collection(db,'family'));
+  await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
+  document.getElementById('family-msg').textContent='🗑️ Family tree wiped.';
+  document.getElementById('family-msg').className='msg error';
+}
 </script>
 </body>
 </html>
